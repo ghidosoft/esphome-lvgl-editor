@@ -1,0 +1,167 @@
+:root {
+  --bg: #0d0e12;
+  --panel: #14161c;
+  --panel-2: #1a1d25;
+  --border: #1f2330;
+  --text: #e6e8ee;
+  --text-muted: #7a8093;
+  --accent: #3aa0ff;
+  --warn: #ff9f0a;
+  --error: #ff453a;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+
+.app {
+  display: grid;
+  grid-template-columns: 260px 1fr 320px;
+  grid-template-rows: 100vh;
+  background: var(--bg);
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 16px 12px;
+  overflow-y: auto;
+}
+.sidebar__title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 4px 12px;
+}
+.sidebar__list { display: flex; flex-direction: column; gap: 2px; }
+.sidebar__group { display: flex; flex-direction: column; }
+.sidebar__project {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+.sidebar__project:hover { background: var(--panel-2); }
+.sidebar__project--active { background: var(--panel-2); color: var(--accent); }
+.sidebar__project--disabled { color: var(--text-muted); cursor: not-allowed; }
+.sidebar__project--disabled:hover { background: transparent; }
+.sidebar__badge {
+  background: var(--border);
+  color: var(--text-muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.sidebar__pages {
+  list-style: none;
+  margin: 4px 0 12px;
+  padding: 0 0 0 12px;
+  border-left: 1px solid var(--border);
+  margin-left: 16px;
+}
+.sidebar__page {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: 4px;
+}
+.sidebar__page:hover { background: var(--panel-2); color: var(--text); }
+.sidebar__page--active { color: var(--accent); background: var(--panel-2); }
+.sidebar__skip {
+  font-size: 9px;
+  color: var(--text-muted);
+  background: var(--border);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ---------- Stage ---------- */
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  overflow: auto;
+}
+.loading, .empty, .error {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.error { color: var(--error); }
+.empty code { color: var(--text); background: var(--panel-2); padding: 2px 6px; border-radius: 3px; }
+
+/* ---------- Device frame ---------- */
+.device-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: min(80vh, 600px);
+  width: 100%;
+}
+.device-frame__bezel {
+  background: #000;
+  padding: 8px;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.canvas-view {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  background: #000;
+}
+.device-frame__caption {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Error panel ---------- */
+.error-panel {
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  padding: 16px 14px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+.error-panel__title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--warn);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 12px;
+}
+.error-panel__group h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 12px 0 4px;
+  font-weight: 500;
+}
+.error-panel__group ul { list-style: none; padding: 0; margin: 0; }
+.error-panel__group li {
+  padding: 6px 8px;
+  background: var(--panel-2);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+.error-panel__msg { color: var(--text); }
+.error-panel__group small { color: var(--text-muted); display: block; margin-top: 2px; }
