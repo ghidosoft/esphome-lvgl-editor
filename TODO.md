@@ -7,7 +7,6 @@ the tool gets used.
 
 - [ ] **`arc` widget**: used in LVGL for gauges / progress rings. Render similar to `spinner` but driven by `value` + `min_value`/`max_value`.
 - [ ] **`bar` widget**: horizontal progress bar (track + indicator). Like `slider` minus the knob.
-- [ ] **Image-id resolver**: when `image: src: some_id`, look up the project's top-level `image:` block (`file: https://…` or local path). Today every `image:` falls back to a placeholder.
 - [ ] **Local image files**: support `file:` pointing at a disk path (serve via a `/__lvgl/asset/` endpoint sandboxed to `esphome/`).
 - [ ] **Robust percentage sizes** (`width: "100%"`) and `SIZE_CONTENT` on containers approximated to children's bounding box (currently falls back to parent size). Labels already shrink to measured text.
 - [ ] **`grid_cell_*_align: CENTER/START/END`** non-STRETCH: only partially handled — verify against real usage.
@@ -15,7 +14,6 @@ the tool gets used.
 - [ ] **Explicit `text_align: LEFT/RIGHT/CENTER`** on labels (currently inferred from `align`).
 - [ ] **Multi-line label**: word-wrap when `long_mode: WRAP` / `BREAK`.
 - [ ] **DPR scaling**: crisp canvas on retina displays (currently 1:1).
-- [ ] **PUA glyph rendering in property controls**: Material Symbols codepoints (U+E000–U+F8FF) show as tofu in text inputs. Show the codepoint (e.g. ``) alongside or instead of the glyph, and accept that form in the input.
 - [ ] **Cosmetic save diffs from eemeli re-stringify**: even with `flowCollectionPadding:false` + `lineWidth:0`, a single edit can touch a handful of unrelated lines (hex case normalized `0xFF`→`0xff`, orphan comments re-indented between top-level blocks). Semantically identical, ESPHome-safe, but ugly in git diffs. Real fix would require CST-level patching instead of `doc.setIn` + `doc.toString()`.
 - [ ] **Error overlay**: when the parser hits `ProjectLoadError`, show file path + message in a banner instead of an empty canvas.
 - [ ] **Sidebar filtering**: exclude files that aren't actual ESPHome projects (e.g. `merged/*.yaml` — only top-level entries are excluded today).
@@ -41,11 +39,11 @@ the tool gets used.
   - Config: HA URL + long-lived token in `.env.local`.
   - Fallback: mock values when disconnected.
 - [ ] **`async_online_image` stream**: support the real radar widget (fetch the 6 frame URLs from HA, crossfade like on the device).
-- [ ] **Visual editing** (in progress, see `.claude/plans/buond-vorrei-iniziare-ad-refactored-quill.md`):
+- [x] **Visual editing** (in progress, see `.claude/plans/buond-vorrei-iniziare-ad-refactored-quill.md`):
   - [x] **P1** — parser migrated to `eemeli/yaml`, per-widget source map (file + yamlPath + viaVariable) and substitutions usage index.
   - [x] **P2** — click-to-select on canvas with hit-testing, read-only Property/Variables tabs showing origin badges.
-  - [ ] **P3** — editable MVP props (text, colors, geometry, padding) for literals, with `/__lvgl/edit` + `/__lvgl/commit` server endpoints and dirty-file save flow.
-  - [ ] **P4** — var-aware write-back (edit propagates to the substitution definition with a "used by N widgets" confirmation), Variables panel editing, multi-file conflict detection.
+  - [x] **P3** — editable MVP props (text, colors, geometry, padding) for literals, with `/__lvgl/edit` + `/__lvgl/commit` server endpoints and dirty-file save flow.
+  - [x] **P4** — var-aware write-back (edit propagates to the substitution definition with a "used by N widgets" confirmation), Variables panel editing, multi-file conflict detection.
 - [ ] **Drag & drop**: reposition widgets, move them across containers, create new ones from a palette. Needs precise hit-testing (the reason we picked Canvas 2D over WASM).
 - [x] **Global style editor**: Styles tab with schema-driven controls + add/remove/var-backed write-back.
 - [ ] **Sensor simulator**: sliders to fake temperature/humidity/etc. without HA — useful for mockups.

@@ -1,8 +1,7 @@
-import type { LvglWidget } from '../../parser/types';
+import type { ImageSpec, LvglWidget } from '../../parser/types';
 import { renderPlaceholder } from './placeholder';
 import { resolveProp } from '../styles';
 import type { Box, RenderContext } from '../context';
-import { isOpaqueTag } from '../../parser/types';
 
 /**
  * Draw an image inside its box. The `src` field in ESPHome refers to an
@@ -17,7 +16,7 @@ const cache = new Map<string, HTMLImageElement>();
 export function renderImage(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const styles = ctx.project.styles;
   const src = resolveProp(w, 'src', styles);
-  const url = resolveImageUrl(src);
+  const url = resolveImageUrl(src, ctx.project.images);
   if (!url) return renderPlaceholder(w, box, ctx);
 
   let img = cache.get(url);
@@ -42,11 +41,15 @@ export function renderImage(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   return box;
 }
 
-function resolveImageUrl(src: unknown): string | undefined {
-  if (typeof src === 'string') {
-    if (src.startsWith('http://') || src.startsWith('https://')) return src;
-    return undefined; // image-id reference — we can't expand it without HA assets
-  }
-  if (isOpaqueTag(src)) return undefined;
+function resolveImageUrl(src: unknown, images: Record<string, ImageSpec>): string | undefined {
+  if (typeof src !== 'string') return undefined;
+  if (isHttpUrl(src)) return src;
+  const spec = images[src];
+  if (spec && isHttpUrl(spec.file)) return spec.file;
+  // Unknown id or local path — deferred until /__lvgl/asset/ exists.
   return undefined;
+}
+
+function isHttpUrl(s: string): boolean {
+  return s.startsWith('http://') || s.startsWith('https://');
 }

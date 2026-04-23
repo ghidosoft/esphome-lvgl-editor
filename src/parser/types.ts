@@ -9,6 +9,7 @@ export interface EsphomeProject {
   hasLvgl: boolean;
   display: { width: number; height: number };
   fonts: Record<string, FontSpec>;
+  images: Record<string, ImageSpec>;
   styles: Record<string, StyleSpec>;
   pages: LvglPage[];
   errors: ParseError[];
@@ -28,6 +29,12 @@ export interface FontSpec {
   weight?: number | string;
   /** Free-form so unknown ESPHome fields survive round-trip. */
   raw: Record<string, unknown>;
+}
+
+export interface ImageSpec {
+  id: string;
+  /** URL or local path, verbatim from the YAML `file:` field. */
+  file: string;
 }
 
 export interface StyleSpec {

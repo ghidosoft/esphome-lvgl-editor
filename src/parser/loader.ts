@@ -34,6 +34,7 @@ export function loadProject(mainPath: string, registry: FileRegistry = new FileR
       hasLvgl: false,
       display: { width: 480, height: 480 },
       fonts: {},
+      images: {},
       styles: {},
       pages: [],
       errors: [

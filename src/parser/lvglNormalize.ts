@@ -3,6 +3,7 @@ import type {
   FontSpec,
   GridLayoutSpec,
   FlexLayoutSpec,
+  ImageSpec,
   LvglLayout,
   LvglPage,
   LvglWidget,
@@ -55,6 +56,7 @@ export function normalizeProject(args: {
   const lvglOrigin = originMap.lvgl;
 
   const fonts = readFonts(doc);
+  const images = readImages(doc);
 
   const sources: Record<WidgetId, WidgetPropSources> = {};
   const styleSources: Record<string, StylePropSources> = {};
@@ -79,6 +81,7 @@ export function normalizeProject(args: {
     hasLvgl,
     display,
     fonts,
+    images,
     styles,
     pages,
     errors,
@@ -117,6 +120,21 @@ function readFonts(doc: Record<string, unknown>): Record<string, FontSpec> {
       weight: (file?.weight as number | string | undefined) ?? undefined,
       raw: e,
     };
+  }
+  return out;
+}
+
+function readImages(doc: Record<string, unknown>): Record<string, ImageSpec> {
+  const out: Record<string, ImageSpec> = {};
+  const list = doc.image;
+  if (!Array.isArray(list)) return out;
+  for (const entry of list) {
+    if (!entry || typeof entry !== 'object') continue;
+    const e = entry as Record<string, unknown>;
+    const id = typeof e.id === 'string' ? e.id : undefined;
+    const file = typeof e.file === 'string' ? e.file : undefined;
+    if (!id || !file) continue;
+    out[id] = { id, file };
   }
   return out;
 }

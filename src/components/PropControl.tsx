@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { SchemaEntry } from '../editor/schema';
 import { toHexColor, toLvglHex } from '../editor/colors';
+import { decodePua, encodePua } from '../editor/pua';
 
 interface Props {
   entry: SchemaEntry;
@@ -38,8 +39,8 @@ export function PropControl({ entry, value, onChange, disabled }: Props) {
 }
 
 function StringInput({ value, onChange, disabled }: { value: unknown; onChange: (v: unknown) => void; disabled?: boolean }) {
-  const [draft, setDraft] = useState(toText(value));
-  useEffect(() => setDraft(toText(value)), [value]);
+  const [draft, setDraft] = useState(encodePua(toText(value)));
+  useEffect(() => setDraft(encodePua(toText(value))), [value]);
   return (
     <input
       type="text"
@@ -47,7 +48,7 @@ function StringInput({ value, onChange, disabled }: { value: unknown; onChange: 
       value={draft}
       disabled={disabled}
       onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => commitIfChanged(draft, value, onChange, (s) => s)}
+      onBlur={() => commitIfChanged(draft, value, onChange, decodePua)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
       }}
