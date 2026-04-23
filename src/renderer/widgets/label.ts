@@ -42,8 +42,18 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
     box.y;
 
   c.fillText(text, xPos, yPos);
+
+  // Return the measured content rectangle instead of the (often oversized)
+  // parent-sized box — the CanvasStage uses this for hit-testing, and we want
+  // clicks on a label to select the label, not the whole card.
+  const measuredWidth = c.measureText(text).width;
   c.restore();
-  return box;
+
+  const contentX =
+    hAlign === 'right' ? xPos - measuredWidth :
+    hAlign === 'center' ? xPos - measuredWidth / 2 :
+    xPos;
+  return { x: contentX, y: yPos, width: measuredWidth, height: fontSize };
 }
 
 function decomposeAlign(align: string): { hAlign: 'left' | 'center' | 'right'; vAlign: 'top' | 'middle' | 'bottom' } {

@@ -8,33 +8,85 @@ import type {
   LvglWidget,
   ParseError,
   StyleSpec,
+  StylePropSources,
   TrackSize,
+  WidgetId,
+  WidgetPropSources,
+  PropSource,
+  SubstitutionEntry,
 } from './types';
+import {
+  readOrigin,
+  isOriginLeaf,
+  makeWidgetId,
+  type Origin,
+  type OriginNode,
+} from './sourceMap';
 
 /**
- * Take a raw ESPHome doc (after package-merge + substitutions) and produce a
- * tidied, JSON-serializable EsphomeProject focused on what the renderer needs.
+ * Take a raw ESPHome doc (after package-merge + substitutions) plus its origin
+ * tree, and produce a tidied, JSON-serializable EsphomeProject focused on what
+ * the renderer needs.
  *
- * Anything we don't understand is preserved on `widget.props` so future widget
- * implementations can pick it up without re-parsing.
+ * In addition to the runtime AST, this pass populates:
+ *   - `project.sources`: `WidgetId → { self, props, styles?, layout? }`
+ *   - `project.substitutions`: variable definitions + the widgets that consume them
+ * Both feed the round-trip editing flow.
  */
 export function normalizeProject(args: {
   name: string;
   sourcePath: string;
   doc: Record<string, unknown>;
+  origin: OriginNode;
+  subs: Record<string, string>;
+  subsOrigin?: Origin;
   errors: ParseError[];
+  files: string[];
 }): EsphomeProject {
-  const { name, sourcePath, doc, errors } = args;
+  const { name, sourcePath, doc, origin, subs, subsOrigin, errors, files } = args;
 
   const display = readDisplaySize(doc);
   const lvgl = (doc.lvgl as Record<string, unknown> | undefined) ?? undefined;
   const hasLvgl = !!lvgl;
 
-  const fonts = readFonts(doc);
-  const styles = lvgl ? readStyles(lvgl) : {};
-  const pages = lvgl ? readPages(lvgl, errors) : [];
+  const originMap = origin && typeof origin === 'object' && !Array.isArray(origin) && !isOriginLeaf(origin)
+    ? (origin as Record<string, OriginNode>)
+    : {};
+  const lvglOrigin = originMap.lvgl;
 
-  return { name, sourcePath, hasLvgl, display, fonts, styles, pages, errors };
+  const fonts = readFonts(doc);
+
+  const sources: Record<WidgetId, WidgetPropSources> = {};
+  const styleSources: Record<string, StylePropSources> = {};
+  const usagesByVar: Record<string, SubstitutionEntry['usages']> = {};
+
+  const lvglOriginMap =
+    lvglOrigin && typeof lvglOrigin === 'object' && !Array.isArray(lvglOrigin) && !isOriginLeaf(lvglOrigin)
+      ? (lvglOrigin as Record<string, OriginNode>)
+      : {};
+
+  const styles = lvgl ? readStyles(lvgl, lvglOriginMap.style_definitions, styleSources, usagesByVar) : {};
+
+  const pages = lvgl
+    ? readPages(lvgl, lvglOriginMap, errors, sources, usagesByVar)
+    : [];
+
+  const substitutions = buildSubstitutionEntries(subs, subsOrigin, usagesByVar);
+
+  return {
+    name,
+    sourcePath,
+    hasLvgl,
+    display,
+    fonts,
+    styles,
+    pages,
+    errors,
+    sources,
+    styleSources,
+    substitutions,
+    files,
+  };
 }
 
 function readDisplaySize(doc: Record<string, unknown>): { width: number; height: number } {
@@ -69,42 +121,105 @@ function readFonts(doc: Record<string, unknown>): Record<string, FontSpec> {
   return out;
 }
 
-function readStyles(lvgl: Record<string, unknown>): Record<string, StyleSpec> {
+function readStyles(
+  lvgl: Record<string, unknown>,
+  stylesOrigin: OriginNode | undefined,
+  styleSources: Record<string, StylePropSources>,
+  usagesByVar: Record<string, SubstitutionEntry['usages']>,
+): Record<string, StyleSpec> {
   const out: Record<string, StyleSpec> = {};
   const list = lvgl.style_definitions;
   if (!Array.isArray(list)) return out;
-  for (const entry of list) {
+  const originArr = Array.isArray(stylesOrigin) ? stylesOrigin : [];
+  for (let i = 0; i < list.length; i++) {
+    const entry = list[i];
     if (!entry || typeof entry !== 'object') continue;
     const e = entry as Record<string, unknown>;
     const id = typeof e.id === 'string' ? e.id : undefined;
     if (!id) continue;
     const { id: _drop, ...props } = e;
     out[id] = { id, props };
+
+    const entryOrigin = originArr[i];
+    const entryOriginMap =
+      entryOrigin && typeof entryOrigin === 'object' && !Array.isArray(entryOrigin) && !isOriginLeaf(entryOrigin)
+        ? (entryOrigin as Record<string, OriginNode>)
+        : {};
+    const selfOrigin = readOrigin(entryOrigin as object);
+    if (!selfOrigin) continue;
+
+    const propSources: Record<string, PropSource> = {};
+    for (const key of Object.keys(props)) {
+      const leaf = entryOriginMap[key];
+      const src = toPropSource(leaf);
+      if (src) {
+        propSources[key] = src;
+        if (src.viaVariable) {
+          (usagesByVar[src.viaVariable] ||= []).push({ kind: 'style', styleId: id, propKey: key });
+        }
+      }
+    }
+    styleSources[id] = {
+      self: { file: selfOrigin.file, yamlPath: selfOrigin.yamlPath },
+      props: propSources,
+    };
   }
   return out;
 }
 
-function readPages(lvgl: Record<string, unknown>, errors: ParseError[]): LvglPage[] {
+function readPages(
+  lvgl: Record<string, unknown>,
+  lvglOrigin: Record<string, OriginNode>,
+  errors: ParseError[],
+  sources: Record<WidgetId, WidgetPropSources>,
+  usagesByVar: Record<string, SubstitutionEntry['usages']>,
+): LvglPage[] {
   const pages = lvgl.pages;
   if (!Array.isArray(pages)) return [];
+  const pagesOrigin = lvglOrigin.pages;
+  const pagesOriginArr = Array.isArray(pagesOrigin) ? pagesOrigin : [];
   const out: LvglPage[] = [];
-  for (const raw of pages) {
+  for (let i = 0; i < pages.length; i++) {
+    const raw = pages[i];
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
     const obj = raw as Record<string, unknown>;
     const id = typeof obj.id === 'string' ? obj.id : `page_${out.length}`;
     const bg_color = typeof obj.bg_color === 'string' ? (obj.bg_color as string) : undefined;
     const skip = obj.skip === true;
-    const widgets = readWidgetList(obj.widgets, errors);
+    const pageOrigin = pagesOriginArr[i];
+    const pageOriginMap =
+      pageOrigin && typeof pageOrigin === 'object' && !Array.isArray(pageOrigin) && !isOriginLeaf(pageOrigin)
+        ? (pageOrigin as Record<string, OriginNode>)
+        : {};
+    const widgets = readWidgetList(
+      obj.widgets,
+      pageOriginMap.widgets,
+      errors,
+      sources,
+      usagesByVar,
+      id,
+      [],
+    );
     out.push({ id, bg_color, skip, widgets });
   }
   return out;
 }
 
-function readWidgetList(value: unknown, errors: ParseError[]): LvglWidget[] {
+function readWidgetList(
+  value: unknown,
+  originValue: OriginNode | undefined,
+  errors: ParseError[],
+  sources: Record<WidgetId, WidgetPropSources>,
+  usagesByVar: Record<string, SubstitutionEntry['usages']>,
+  pageId: string,
+  indexChain: number[],
+): LvglWidget[] {
   if (!Array.isArray(value)) return [];
+  const originArr = Array.isArray(originValue) ? originValue : [];
   const out: LvglWidget[] = [];
-  for (const item of value) {
-    const w = readWidget(item, errors);
+  for (let i = 0; i < value.length; i++) {
+    const path = [...indexChain, i];
+    const w = readWidget(value[i], originArr[i], errors, sources, usagesByVar, pageId, path);
     if (w) out.push(w);
   }
   return out;
@@ -117,7 +232,15 @@ function readWidgetList(value: unknown, errors: ParseError[]): LvglWidget[] {
  *       text: "Hi"
  *       align: CENTER
  */
-function readWidget(item: unknown, errors: ParseError[]): LvglWidget | null {
+function readWidget(
+  item: unknown,
+  originItem: OriginNode | undefined,
+  errors: ParseError[],
+  sources: Record<WidgetId, WidgetPropSources>,
+  usagesByVar: Record<string, SubstitutionEntry['usages']>,
+  pageId: string,
+  indexPath: number[],
+): LvglWidget | null {
   if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
   const entries = Object.entries(item as Record<string, unknown>);
   if (entries.length !== 1) return null;
@@ -126,8 +249,57 @@ function readWidget(item: unknown, errors: ParseError[]): LvglWidget | null {
     ? (raw as Record<string, unknown>)
     : {}) as Record<string, unknown>;
 
+  const originMap =
+    originItem && typeof originItem === 'object' && !Array.isArray(originItem) && !isOriginLeaf(originItem)
+      ? (originItem as Record<string, OriginNode>)
+      : {};
+  const bodyOrigin = originMap[type];
+  const bodyOriginMap =
+    bodyOrigin && typeof bodyOrigin === 'object' && !Array.isArray(bodyOrigin) && !isOriginLeaf(bodyOrigin)
+      ? (bodyOrigin as Record<string, OriginNode>)
+      : {};
+
+  const selfOrigin = readOrigin(originItem as object);
+
   const { widgets, layout, styles, ...props } = body;
-  const children = readWidgetList(widgets, errors);
+  const declaredId = typeof body.id === 'string' ? (body.id as string) : undefined;
+  const widgetId = makeWidgetId(pageId, indexPath, declaredId);
+
+  // Populate sources for this widget.
+  if (selfOrigin) {
+    const propSources: Record<string, PropSource> = {};
+    for (const key of Object.keys(props)) {
+      const leaf = bodyOriginMap[key];
+      const src = toPropSource(leaf);
+      if (src) {
+        propSources[key] = src;
+        if (src.viaVariable) {
+          (usagesByVar[src.viaVariable] ||= []).push({ kind: 'widget', widgetId, propKey: key });
+        }
+      }
+    }
+    const stylesNode = bodyOriginMap.styles;
+    const stylesSrc = toPropSource(stylesNode);
+    const layoutNode = bodyOriginMap.layout;
+    const layoutSrc = toLayoutPropSources(layoutNode);
+    sources[widgetId] = {
+      self: { file: selfOrigin.file, yamlPath: selfOrigin.yamlPath, widgetType: type },
+      props: propSources,
+      styles: stylesSrc,
+      layout: layoutSrc,
+    };
+  }
+
+  const childrenOrigin = bodyOriginMap.widgets;
+  const children = readWidgetList(
+    widgets,
+    childrenOrigin,
+    errors,
+    sources,
+    usagesByVar,
+    pageId,
+    indexPath,
+  );
   const styleIds = readStyles_field(styles);
   const layoutSpec = readLayout(layout, errors, type);
 
@@ -137,7 +309,56 @@ function readWidget(item: unknown, errors: ParseError[]): LvglWidget | null {
     layout: layoutSpec,
     styles: styleIds,
     children,
+    widgetId,
   };
+}
+
+function toPropSource(leaf: OriginNode | undefined): PropSource | undefined {
+  if (!leaf) return undefined;
+  if (isOriginLeaf(leaf)) {
+    const out: PropSource = { file: leaf.file, yamlPath: [...leaf.yamlPath] };
+    if (leaf.viaVariable) out.viaVariable = leaf.viaVariable;
+    if (leaf.template) out.template = true;
+    return out;
+  }
+  // Containers: record their origin without viaVariable (only leaves carry that).
+  const containerOrigin = readOrigin(leaf as object);
+  if (containerOrigin) {
+    return { file: containerOrigin.file, yamlPath: [...containerOrigin.yamlPath] };
+  }
+  return undefined;
+}
+
+function toLayoutPropSources(
+  layoutOrigin: OriginNode | undefined,
+): Record<string, PropSource> | undefined {
+  if (!layoutOrigin) return undefined;
+  if (isOriginLeaf(layoutOrigin) || Array.isArray(layoutOrigin)) return undefined;
+  const out: Record<string, PropSource> = {};
+  for (const [k, v] of Object.entries(layoutOrigin as Record<string, OriginNode>)) {
+    const src = toPropSource(v);
+    if (src) out[k] = src;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function buildSubstitutionEntries(
+  subs: Record<string, string>,
+  subsOrigin: Origin | undefined,
+  usagesByVar: Record<string, SubstitutionEntry['usages']>,
+): Record<string, SubstitutionEntry> {
+  const out: Record<string, SubstitutionEntry> = {};
+  const file = subsOrigin?.file ?? '';
+  const basePath = subsOrigin?.yamlPath ?? ['substitutions'];
+  for (const [name, value] of Object.entries(subs)) {
+    out[name] = {
+      value,
+      file,
+      yamlPath: [...basePath, name],
+      usages: usagesByVar[name] ?? [],
+    };
+  }
+  return out;
 }
 
 function readStyles_field(value: unknown): string[] {

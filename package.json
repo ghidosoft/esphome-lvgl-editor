@@ -13,7 +13,9 @@
     "js-yaml": "^4.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.1.0"
+    "react-router-dom": "^7.1.0",
+    "yaml": "^2.8.3",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
