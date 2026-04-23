@@ -1,4 +1,4 @@
-import type { FlexLayoutSpec, LvglWidget } from '../../parser/types';
+import type { FlexLayoutSpec } from '../../parser/types';
 
 export interface FlexSlot {
   x: number;
@@ -9,8 +9,10 @@ export interface FlexSlot {
 
 /**
  * Lay children out along main axis with `pad_row`/`pad_column` as gap.
- * Each child must declare its own width/height — we don't support
- * content-sized children here (good enough for the current YAML).
+ *
+ * `childSizes` are the already-resolved widths/heights of each child
+ * (SIZE_CONTENT and percentages expanded by the caller). The engine treats
+ * them as given.
  *
  * Cross axis: children are centered.
  *
@@ -20,19 +22,19 @@ export interface FlexSlot {
 export function layoutFlex(
   spec: FlexLayoutSpec,
   parentInner: { width: number; height: number },
-  children: LvglWidget[],
+  childSizes: { width: number; height: number }[],
 ): FlexSlot[] {
   const isRow = spec.flow.startsWith('ROW');
   const mainTotal = isRow ? parentInner.width : parentInner.height;
   const crossTotal = isRow ? parentInner.height : parentInner.width;
   const gap = (isRow ? spec.pad_column : spec.pad_row) ?? 0;
 
-  const sizes = children.map((c) => ({
-    main: numProp(isRow ? c.props.width : c.props.height, 0),
-    cross: numProp(isRow ? c.props.height : c.props.width, 0),
+  const sizes = childSizes.map((c) => ({
+    main: isRow ? c.width : c.height,
+    cross: isRow ? c.height : c.width,
   }));
   const sumMain = sizes.reduce((a, b) => a + b.main, 0);
-  const totalGap = gap * Math.max(0, children.length - 1);
+  const totalGap = gap * Math.max(0, childSizes.length - 1);
   const free = Math.max(0, mainTotal - sumMain - totalGap);
 
   let mainStart = 0;
@@ -43,11 +45,11 @@ export function layoutFlex(
     case 'END':
       mainStart = free; break;
     case 'SPACE_BETWEEN':
-      extraGap = children.length > 1 ? free / (children.length - 1) : 0; break;
+      extraGap = childSizes.length > 1 ? free / (childSizes.length - 1) : 0; break;
     case 'SPACE_EVENLY':
-      extraGap = free / (children.length + 1); mainStart = extraGap; break;
+      extraGap = free / (childSizes.length + 1); mainStart = extraGap; break;
     case 'SPACE_AROUND':
-      extraGap = free / children.length; mainStart = extraGap / 2; break;
+      extraGap = free / childSizes.length; mainStart = extraGap / 2; break;
     case 'START':
     default:
       mainStart = 0; break;
@@ -55,7 +57,7 @@ export function layoutFlex(
 
   const slots: FlexSlot[] = [];
   let cursor = mainStart;
-  for (let i = 0; i < children.length; i++) {
+  for (let i = 0; i < childSizes.length; i++) {
     const s = sizes[i];
     const crossOffset = (crossTotal - s.cross) / 2;
     if (isRow) {
@@ -68,11 +70,27 @@ export function layoutFlex(
   return slots;
 }
 
-function numProp(v: unknown, fallback: number): number {
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string') {
-    const n = Number(v);
-    if (!Number.isNaN(n)) return n;
+/**
+ * Intrinsic content size for a flex container given its children's intrinsic
+ * sizes. Sum on the main axis (plus gaps), max on the cross axis. Used by the
+ * measure pass to resolve SIZE_CONTENT on the parent.
+ */
+export function measureFlexContent(
+  spec: FlexLayoutSpec,
+  childSizes: { width: number; height: number }[],
+): { width: number; height: number } {
+  if (childSizes.length === 0) return { width: 0, height: 0 };
+  const isRow = spec.flow.startsWith('ROW');
+  const gap = (isRow ? spec.pad_column : spec.pad_row) ?? 0;
+  const gaps = gap * Math.max(0, childSizes.length - 1);
+  let main = 0;
+  let cross = 0;
+  for (const c of childSizes) {
+    const m = isRow ? c.width : c.height;
+    const x = isRow ? c.height : c.width;
+    main += m;
+    cross = Math.max(cross, x);
   }
-  return fallback;
+  main += gaps;
+  return isRow ? { width: main, height: cross } : { width: cross, height: main };
 }

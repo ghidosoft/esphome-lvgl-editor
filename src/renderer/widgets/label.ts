@@ -75,3 +75,20 @@ function parseFontSize(font: string): number {
   const m = /(\d+)px/.exec(font);
   return m ? parseInt(m[1], 10) : 14;
 }
+
+/**
+ * Measure a label without drawing. Used by the intrinsic-size pass to resolve
+ * `SIZE_CONTENT` on labels and on containers whose children include labels.
+ */
+export function measureLabel(w: LvglWidget, ctx: RenderContext): { width: number; height: number } {
+  const text = String(resolveProp(w, 'text', ctx.project.styles) ?? '');
+  if (text === '') return { width: 0, height: 0 };
+  const fontId = resolveProp<string>(w, 'text_font', ctx.project.styles);
+  const font = resolveFont(fontId, ctx.project.fonts);
+  const c = ctx.ctx;
+  c.save();
+  c.font = font;
+  const width = c.measureText(text).width;
+  c.restore();
+  return { width, height: parseFontSize(font) };
+}

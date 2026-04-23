@@ -88,3 +88,46 @@ function numProp(v: unknown, fallback: number): number {
 function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
+
+/**
+ * Intrinsic content size for a grid container. Each track is sized to the max
+ * intrinsic size of the children that span it; `px` tracks take the greater of
+ * their fixed value and the child max; `fr` tracks lose their proportional
+ * meaning during measure (we don't know the parent) and are treated as content.
+ */
+export function measureGridContent(
+  spec: GridLayoutSpec,
+  children: LvglWidget[],
+  childSizes: { width: number; height: number }[],
+): { width: number; height: number } {
+  const nCols = spec.columns.length;
+  const nRows = spec.rows.length;
+  if (nCols === 0 || nRows === 0) return { width: 0, height: 0 };
+
+  const colMax = new Array(nCols).fill(0);
+  const rowMax = new Array(nRows).fill(0);
+  for (let i = 0; i < children.length; i++) {
+    const c = children[i];
+    const s = childSizes[i];
+    const colPos = clamp(numProp(c.props.grid_cell_column_pos, 0), 0, nCols - 1);
+    const rowPos = clamp(numProp(c.props.grid_cell_row_pos, 0), 0, nRows - 1);
+    // Spanned children: attribute the full intrinsic to the starting track.
+    // A stricter model would distribute across tracks, but it's rarely needed
+    // and adds complexity without a real-world driver.
+    colMax[colPos] = Math.max(colMax[colPos], s.width);
+    rowMax[rowPos] = Math.max(rowMax[rowPos], s.height);
+  }
+  const colGap = spec.pad_column ?? 0;
+  const rowGap = spec.pad_row ?? 0;
+  let width = colGap * Math.max(0, nCols - 1);
+  let height = rowGap * Math.max(0, nRows - 1);
+  for (let i = 0; i < nCols; i++) {
+    const track = spec.columns[i];
+    width += track.kind === 'px' ? Math.max(track.value, colMax[i]) : colMax[i];
+  }
+  for (let i = 0; i < nRows; i++) {
+    const track = spec.rows[i];
+    height += track.kind === 'px' ? Math.max(track.value, rowMax[i]) : rowMax[i];
+  }
+  return { width, height };
+}

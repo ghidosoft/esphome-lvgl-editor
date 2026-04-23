@@ -8,7 +8,6 @@ the tool gets used.
 - [ ] **`arc` widget**: used in LVGL for gauges / progress rings. Render similar to `spinner` but driven by `value` + `min_value`/`max_value`.
 - [ ] **`bar` widget**: horizontal progress bar (track + indicator). Like `slider` minus the knob.
 - [ ] **Local image files**: support `file:` pointing at a disk path (serve via a `/__lvgl/asset/` endpoint sandboxed to `esphome/`).
-- [ ] **Robust percentage sizes** (`width: "100%"`) and `SIZE_CONTENT` on containers approximated to children's bounding box (currently falls back to parent size). Labels already shrink to measured text.
 - [ ] **`grid_cell_*_align: CENTER/START/END`** non-STRETCH: only partially handled — verify against real usage.
 - [ ] **`pad_row`/`pad_column` on layout-less containers**: today only `pad_all` is honoured as inset; per-axis padding isn't.
 - [ ] **Explicit `text_align: LEFT/RIGHT/CENTER`** on labels (currently inferred from `align`).
@@ -28,6 +27,7 @@ the tool gets used.
 - [ ] **Real embedded fonts**: compile Montserrat to bitmaps at the sizes used by the display (e.g. 36/28/14/12/10) for pixel-perfect fidelity, instead of approximating via Google Fonts in the browser.
 - [ ] **Material Symbols aliases**: a small `glyph_xxx → code point` dictionary so YAML can reference icons by name instead of hardcoded `\uE...` escapes.
 - [ ] **Source view**: side panel showing the raw YAML source of the selected page/widget (currently we show only key/value + origin file, not the literal YAML block).
+- [ ] **Widget tree panel**: hierarchical view of the page's widget tree with click-to-select and collapse/expand. Especially useful when children tightly wrap their parent (e.g. `SIZE_CONTENT` containers) and click-selection alone can't reach every node.
 - [ ] **Pan & zoom** of the canvas: inspect details without zooming the whole browser.
 - [ ] **PNG snapshot**: an "export frame" button to capture the preview (handy for PRs / docs).
 - [ ] **Multi-device**: side-by-side list of multiple display projects, same YAML rendered at different sizes (for future responsive testing).

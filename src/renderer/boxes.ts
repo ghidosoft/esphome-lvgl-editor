@@ -20,11 +20,12 @@ export function computeBox(
   parent: Box,
   slot: Box | undefined,
   styles: Record<string, StyleSpec>,
+  measure?: { width: () => number; height: () => number },
 ): Box {
   const widthProp = resolveProp(widget, 'width', styles);
   const heightProp = resolveProp(widget, 'height', styles);
-  const declaredW = sizeProp(widthProp, parent.width);
-  const declaredH = sizeProp(heightProp, parent.height);
+  const declaredW = sizeProp(widthProp, parent.width, measure?.width);
+  const declaredH = sizeProp(heightProp, parent.height, measure?.height);
   const hasDeclaredW = widthProp != null;
   const hasDeclaredH = heightProp != null;
 
@@ -87,19 +88,27 @@ export function numProp(v: unknown, fallback: number): number {
 }
 
 /**
- * Width/height resolver. Supports raw numbers, percentage strings ("100%"),
- * and the literal "SIZE_CONTENT" (treated as parent width — a coarse fallback
- * since we don't have child measurements at compute time).
+ * Width/height resolver. Supports:
+ *   - raw numbers (px)
+ *   - percentage strings ("100%", "50%") resolved against `parentSize`
+ *   - "SIZE_CONTENT" resolved via `measureContent` when provided — otherwise
+ *     falls back to parentSize (same coarse behaviour as before the measure
+ *     pass existed, so call sites without a measure callback don't regress)
+ * Negative percentages clamp to 0. Malformed percentages bail to parentSize.
  */
-export function sizeProp(v: unknown, parentSize: number): number {
+export function sizeProp(
+  v: unknown,
+  parentSize: number,
+  measureContent?: () => number,
+): number {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
     const trimmed = v.trim();
-    if (trimmed.endsWith('%')) {
-      const pct = parseFloat(trimmed.slice(0, -1));
-      if (!Number.isNaN(pct)) return (parentSize * pct) / 100;
+    const pct = /^(-?\d+(?:\.\d+)?)%$/.exec(trimmed);
+    if (pct) return Math.max(0, (parentSize * parseFloat(pct[1])) / 100);
+    if (trimmed.toUpperCase() === 'SIZE_CONTENT') {
+      return measureContent ? measureContent() : parentSize;
     }
-    if (trimmed.toUpperCase() === 'SIZE_CONTENT') return parentSize;
     const n = Number(trimmed);
     if (!Number.isNaN(n)) return n;
   }
