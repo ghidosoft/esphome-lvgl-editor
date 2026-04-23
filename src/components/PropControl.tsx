@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { SchemaEntry } from '../editor/schema';
+import { toHexColor, toLvglHex } from '../editor/colors';
 
 interface Props {
   entry: SchemaEntry;
@@ -214,15 +215,3 @@ function commitIfChanged(
   onChange(parsed);
 }
 
-/** Convert an ESPHome color value (`0xRRGGBB` or `#rrggbb`) to CSS `#rrggbb`, or `null` if unrecognised. */
-function toHexColor(v: string): string | null {
-  const t = v.trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(t)) return t.toLowerCase();
-  const m = /^0x([0-9a-fA-F]{6})$/.exec(t);
-  return m ? `#${m[1].toLowerCase()}` : null;
-}
-
-/** CSS `#rrggbb` → LVGL-style `0xRRGGBB` (uppercase) to match existing YAML conventions. */
-function toLvglHex(cssHex: string): string {
-  return `0x${cssHex.replace(/^#/, '').toUpperCase()}`;
-}

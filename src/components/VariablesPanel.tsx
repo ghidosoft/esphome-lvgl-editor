@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { EsphomeProject } from '../parser/types';
 import { useEditorStore } from '../editor/store';
+import { isColorLike, toHexColor, toLvglHex } from '../editor/colors';
 
 interface Props {
   project: EsphomeProject;
@@ -85,6 +86,8 @@ function VarRow({
 }) {
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
+  const isColor = isColorLike(value) || isColorLike(draft);
+  const hex = isColor ? toHexColor(draft) : null;
 
   return (
     <div className={`var-row ${hasOverride ? 'var-row--dirty' : ''}`}>
@@ -93,6 +96,18 @@ function VarRow({
         {hasOverride && <span className="prop-row__dirty-dot" title="unsaved change" />}
       </div>
       <div className="var-row__control">
+        {isColor && (
+          <input
+            type="color"
+            className="prop-input__color-picker"
+            value={hex ?? '#000000'}
+            onChange={(e) => {
+              const next = toLvglHex(e.target.value);
+              setDraft(next);
+              onChange(next);
+            }}
+          />
+        )}
         <input
           type="text"
           className="prop-input"
