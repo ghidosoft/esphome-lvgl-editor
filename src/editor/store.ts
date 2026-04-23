@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { EsphomeProject, LvglPage, LvglWidget, WidgetId } from '../parser/types';
 import type { HitEntry } from '../renderer/CanvasStage';
+import { deleteNested, setNested, splitKey } from './nestedKey';
 
 /**
  * Editor state shared by canvas, overlay, and side-panels.
@@ -292,8 +293,23 @@ function overrideWidget(
     // the renderer cascades them. Route overrides there; skip when the patch
     // only touches props.
     const { styles: styleOverride, ...propPatch } = patch ?? {};
-    nextProps = { ...widget.props, ...propPatch };
-    if (del) for (const key of del) delete nextProps[key];
+    // Dotted keys (e.g. "indicator.bg_color") land on nested part blocks;
+    // flat keys overwrite top-level props as before.
+    nextProps = { ...widget.props };
+    for (const [key, value] of Object.entries(propPatch)) {
+      const path = splitKey(key);
+      nextProps = path.length === 1
+        ? { ...nextProps, [path[0]]: value }
+        : setNested(nextProps, path, value);
+    }
+    if (del) {
+      for (const key of del) {
+        const path = splitKey(key);
+        nextProps = path.length === 1
+          ? (() => { const { [path[0]]: _, ...rest } = nextProps; return rest; })()
+          : deleteNested(nextProps, path);
+      }
+    }
     if (styleOverride !== undefined) {
       nextStyles = Array.isArray(styleOverride)
         ? (styleOverride as unknown[]).filter((x): x is string => typeof x === 'string')

@@ -1,4 +1,5 @@
 import type { EsphomeProject, WidgetId } from '../parser/types';
+import { splitKey } from './nestedKey';
 
 /**
  * Wire format for server-side edits. The server looks up the corresponding
@@ -85,7 +86,7 @@ export function buildEditOps(
         ops.push({
           op: 'set',
           file: sources.self.file,
-          yamlPath: [...sources.self.yamlPath, sources.self.widgetType, propKey],
+          yamlPath: [...sources.self.yamlPath, sources.self.widgetType, ...splitKey(propKey)],
           newValue: coerceScalar(value),
         });
         continue;

@@ -283,7 +283,10 @@ function readWidget(
   const declaredId = typeof body.id === 'string' ? (body.id as string) : undefined;
   const widgetId = makeWidgetId(pageId, indexPath, declaredId);
 
-  // Populate sources for this widget.
+  // Populate sources for this widget. Nested part-selector blocks (e.g.
+  // `indicator: { bg_color: ... }` on a slider) also get their sub-keys
+  // recorded under dotted keys like "indicator.bg_color", so the editor can
+  // target them directly without special-casing containers.
   if (selfOrigin) {
     const propSources: Record<string, PropSource> = {};
     for (const key of Object.keys(props)) {
@@ -293,6 +296,23 @@ function readWidget(
         propSources[key] = src;
         if (src.viaVariable) {
           (usagesByVar[src.viaVariable] ||= []).push({ kind: 'widget', widgetId, propKey: key });
+        }
+      }
+      const propVal = props[key];
+      if (
+        propVal && typeof propVal === 'object' && !Array.isArray(propVal) &&
+        leaf && typeof leaf === 'object' && !Array.isArray(leaf) && !isOriginLeaf(leaf)
+      ) {
+        const subOriginMap = leaf as Record<string, OriginNode>;
+        for (const subKey of Object.keys(propVal as Record<string, unknown>)) {
+          const subLeaf = subOriginMap[subKey];
+          const subSrc = toPropSource(subLeaf);
+          if (!subSrc) continue;
+          const dotted = `${key}.${subKey}`;
+          propSources[dotted] = subSrc;
+          if (subSrc.viaVariable) {
+            (usagesByVar[subSrc.viaVariable] ||= []).push({ kind: 'widget', widgetId, propKey: dotted });
+          }
         }
       }
     }

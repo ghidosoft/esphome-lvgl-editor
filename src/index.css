@@ -226,6 +226,26 @@ html, body, #root { height: 100%; margin: 0; }
 }
 .panel-body__rows { display: flex; flex-direction: column; gap: 8px; }
 
+/* ---------- Property group (nested part selectors) ---------- */
+.prop-group {
+  background: var(--panel-2);
+  border-radius: 4px;
+  padding: 6px 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.prop-group__header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+}
+.prop-group__rows { display: flex; flex-direction: column; gap: 4px; }
+.prop-group .prop-row { background: transparent; padding: 4px 6px; }
+
 /* ---------- Property row ---------- */
 .prop-row {
   background: var(--panel-2);

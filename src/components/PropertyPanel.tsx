@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react';
 import type { EsphomeProject, LvglWidget, PropSource, WidgetId } from '../parser/types';
 import { isOpaqueTag } from '../parser/types';
 import { useEditorStore } from '../editor/store';
-import { getSchema, type SchemaEntry } from '../editor/schema';
+import { getSchema, isGroup, type SchemaEntry, type SchemaGroup, type SchemaItem } from '../editor/schema';
+import { getNested, splitKey } from '../editor/nestedKey';
 import { PropControl } from './PropControl';
 import { StylesField } from './StylesField';
 
@@ -43,10 +45,47 @@ export function PropertyPanel({ project }: Props) {
   const pendingDeletions = widgetDeletionsMap[selectedWidgetId] ?? [];
 
   // Props outside the schema that are present on the widget — render
-  // read-only so nothing gets hidden. (Editing the full surface is a P5
-  // schema-expansion concern.)
+  // read-only so nothing gets hidden. Schema groups claim their top-level
+  // YAML key (e.g. `indicator`) so they don't reappear as raw rows.
   const schemaKeys = new Set(schema.map((e) => e.key));
   const extraRows = Object.keys(widget.props).filter((k) => !schemaKeys.has(k));
+
+  const renderRow = (entry: SchemaEntry) => {
+    const source = sources.props[entry.key];
+    const varName = source?.viaVariable;
+    const varOverride = varName ? varOverrides[varName] : undefined;
+    const hasVarOverride = varName != null && varName in varOverrides;
+    const hasWidgetOverride = entry.key in widgetOverrides;
+    const pendingDelete = pendingDeletions.includes(entry.key);
+    const hasOverride = hasVarOverride || hasWidgetOverride || pendingDelete;
+    const existsInSource = source != null;
+    const path = splitKey(entry.key);
+    const existsNow = getNested(widget.props, path) !== undefined;
+
+    // Effective displayed value: varOverride → widgetOverride → source.
+    const effective = hasVarOverride
+      ? varOverride
+      : hasWidgetOverride
+        ? widgetOverrides[entry.key]
+        : getNested(widget.props, path);
+
+    return (
+      <EditableRow
+        key={entry.key}
+        entry={entry}
+        source={source}
+        project={project}
+        value={effective}
+        hasOverride={hasOverride}
+        pendingDelete={pendingDelete}
+        existsInSource={existsInSource}
+        existsNow={existsNow}
+        onChange={(v) => updateProp(project, selectedWidgetId, entry.key, v)}
+        onRevert={() => updateProp(project, selectedWidgetId, entry.key, undefined)}
+        onDelete={() => deleteProp(selectedWidgetId, entry.key)}
+      />
+    );
+  };
 
   return (
     <div className="panel-body">
@@ -71,42 +110,7 @@ export function PropertyPanel({ project }: Props) {
           onRevert={() => updateProp(project, selectedWidgetId, 'styles', undefined)}
         />
 
-        {schema.map((entry) => {
-          const source = sources.props[entry.key];
-          const varName = source?.viaVariable;
-          const varOverride = varName ? varOverrides[varName] : undefined;
-          const hasVarOverride = varName != null && varName in varOverrides;
-          const hasWidgetOverride = entry.key in widgetOverrides;
-          const pendingDelete = pendingDeletions.includes(entry.key);
-          const hasOverride = hasVarOverride || hasWidgetOverride || pendingDelete;
-          const existsInSource = source != null;
-          const existsNow = entry.key in widget.props;
-
-          // Effective displayed value: varOverride → widgetOverride → source.
-          // When pending-delete, show the control with source value but dimmed.
-          const effective = hasVarOverride
-            ? varOverride
-            : hasWidgetOverride
-              ? widgetOverrides[entry.key]
-              : widget.props[entry.key];
-
-          return (
-            <EditableRow
-              key={entry.key}
-              entry={entry}
-              source={source}
-              project={project}
-              value={effective}
-              hasOverride={hasOverride}
-              pendingDelete={pendingDelete}
-              existsInSource={existsInSource}
-              existsNow={existsNow}
-              onChange={(v) => updateProp(project, selectedWidgetId, entry.key, v)}
-              onRevert={() => updateProp(project, selectedWidgetId, entry.key, undefined)}
-              onDelete={() => deleteProp(selectedWidgetId, entry.key)}
-            />
-          );
-        })}
+        {schema.map((item) => renderSchemaItem(item, renderRow))}
 
         {extraRows.map((key) => (
           <ReadOnlyRow
@@ -117,6 +121,33 @@ export function PropertyPanel({ project }: Props) {
             source={sources.props[key]}
           />
         ))}
+      </div>
+    </div>
+  );
+}
+
+function renderSchemaItem(
+  item: SchemaItem,
+  renderRow: (entry: SchemaEntry) => ReactNode,
+): ReactNode {
+  if (!isGroup(item)) return renderRow(item);
+  return <GroupSection key={item.key} group={item} renderRow={renderRow} />;
+}
+
+function GroupSection({
+  group,
+  renderRow,
+}: {
+  group: SchemaGroup;
+  renderRow: (entry: SchemaEntry) => ReactNode;
+}) {
+  return (
+    <div className="prop-group">
+      <div className="prop-group__header">{group.label ?? group.key}</div>
+      <div className="prop-group__rows">
+        {group.entries.map((child) =>
+          renderRow({ ...child, key: `${group.key}.${child.key}` }),
+        )}
       </div>
     </div>
   );

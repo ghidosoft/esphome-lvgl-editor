@@ -16,8 +16,10 @@ export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const ratio = max > min ? Math.max(0, Math.min(1, (value - min) / (max - min))) : 0;
 
   const trackColor = parseColor(resolveProp(w, 'bg_color', styles), '#333333');
-  const indicatorColor = parseColor(resolveProp(w, 'indicator_bg_color', styles), '#3aa0ff');
-  const knobColor = parseColor(resolveProp(w, 'knob_bg_color', styles), '#ffffff');
+  const indicator = partBag(w, 'indicator');
+  const knob = partBag(w, 'knob');
+  const indicatorColor = parseColor(indicator?.bg_color, '#3aa0ff');
+  const knobColor = parseColor(knob?.bg_color, '#ffffff');
   const radius = num(resolveProp(w, 'radius', styles), Math.min(box.height, 8));
 
   const c = ctx.ctx;
@@ -43,6 +45,11 @@ export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   c.fill();
   c.restore();
   return box;
+}
+
+function partBag(w: LvglWidget, key: string): Record<string, unknown> | undefined {
+  const v = w.props[key];
+  return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : undefined;
 }
 
 function num(v: unknown, fallback: number): number {
