@@ -75,6 +75,8 @@ export interface LvglWidget {
   /** Style ids referenced via `styles:` (string or list). */
   styles: string[];
   children: LvglWidget[];
+  /** Stable id shared with `project.sources`. Set by the normalizer. */
+  widgetId?: WidgetId;
 }
 
 export type ParseError =

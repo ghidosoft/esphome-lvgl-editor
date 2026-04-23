@@ -277,6 +277,7 @@ function readWidget(
     layout: layoutSpec,
     styles: styleIds,
     children,
+    widgetId,
   };
 }
 

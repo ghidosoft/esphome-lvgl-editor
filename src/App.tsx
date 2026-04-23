@@ -2,7 +2,8 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { DeviceFrame } from './components/DeviceFrame';
 import { CanvasView } from './components/CanvasView';
-import { ErrorPanel } from './components/ErrorPanel';
+import { ErrorDrawer } from './components/ErrorDrawer';
+import { EditorPanel } from './components/EditorPanel';
 import { useProject } from './client/hooks/useProject';
 import { useProjects } from './client/hooks/useProjects';
 
@@ -67,7 +68,8 @@ function ProjectShell({ projects }: { projects: { name: string; hasLvgl: boolean
           <div className="empty">No pages defined.</div>
         )}
       </main>
-      <ErrorPanel errors={project.data?.errors ?? []} />
+      {project.data ? <EditorPanel project={project.data} /> : <aside className="editor-panel" />}
+      <ErrorDrawer errors={project.data?.errors ?? []} />
     </>
   );
 }
