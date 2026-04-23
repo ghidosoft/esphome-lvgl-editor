@@ -18,7 +18,7 @@ html, body, #root { height: 100%; margin: 0; }
 
 .app {
   display: grid;
-  grid-template-columns: 260px 1fr 340px;
+  grid-template-columns: 260px 1fr clamp(340px, 26vw, 520px);
   grid-template-rows: 1fr auto;
   grid-template-areas:
     'sidebar stage editor'
@@ -338,6 +338,47 @@ html, body, #root { height: 100%; margin: 0; }
   margin-top: 6px;
 }
 .prop-row__banner--var code { color: var(--accent); background: transparent; padding: 0; }
+
+/* ---------- Styles field (chips on a widget) ---------- */
+.prop-row--styles .styles-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+.styles-field__empty { color: var(--text-muted); font-size: 11px; font-style: italic; }
+.styles-field__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  padding: 3px 6px 3px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.styles-field__chip:hover { border-color: var(--error); color: var(--error); }
+.styles-field__chip-x { color: var(--text-muted); font-size: 13px; line-height: 1; }
+.styles-field__chip:hover .styles-field__chip-x { color: var(--error); }
+.styles-field__add {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--accent);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.styles-field__add:hover { border-color: var(--accent); }
+.styles-field__add-select {
+  min-width: 160px;
+  padding: 3px 6px;
+  font-size: 11px;
+}
 
 /* ---------- Styles panel (accordion) ---------- */
 .style-section {

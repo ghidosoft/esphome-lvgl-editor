@@ -5,11 +5,14 @@ import type { EsphomeProject, WidgetId } from '../parser/types';
  * `yaml.Document` in the FileRegistry and calls either `doc.setIn` or
  * `doc.deleteIn` depending on `op`.
  */
+export type EditScalar = string | number | boolean | null;
+
 export interface EditOp {
   file: string;
   yamlPath: (string | number)[];
   op: 'set' | 'delete';
-  newValue?: string | number | boolean | null;
+  /** Scalars go through directly; arrays become YAML sequences via `setIn`. */
+  newValue?: EditScalar | EditScalar[];
 }
 
 export interface EditBuildResult {
@@ -55,6 +58,28 @@ export function buildEditOps(
       continue;
     }
     for (const [propKey, value] of Object.entries(patch)) {
+      // `styles` lives on WidgetPropSources.styles, not .props[] — it needs
+      // its own routing and the value can be an array.
+      if (propKey === 'styles') {
+        const list = Array.isArray(value) ? (value as unknown[]).filter((x) => typeof x === 'string') : [];
+        const target = sources.styles ?? {
+          file: sources.self.file,
+          yamlPath: [...sources.self.yamlPath, sources.self.widgetType, 'styles'],
+        };
+        if (list.length === 0) {
+          if (sources.styles) {
+            ops.push({ op: 'delete', file: target.file, yamlPath: target.yamlPath });
+          }
+        } else {
+          ops.push({
+            op: 'set',
+            file: target.file,
+            yamlPath: target.yamlPath,
+            newValue: list.length === 1 ? (list[0] as string) : (list as string[]),
+          });
+        }
+        continue;
+      }
       const propSource = sources.props[propKey];
       if (!propSource) {
         ops.push({
@@ -180,5 +205,12 @@ export function buildEditOps(
 function coerceScalar(v: unknown): EditOp['newValue'] {
   if (v == null) return null;
   if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return v;
+  if (Array.isArray(v)) {
+    return v.map((x) => {
+      if (x == null) return null as EditScalar;
+      if (typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean') return x;
+      return String(x);
+    });
+  }
   return String(v);
 }

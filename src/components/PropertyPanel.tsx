@@ -3,6 +3,7 @@ import { isOpaqueTag } from '../parser/types';
 import { useEditorStore } from '../editor/store';
 import { getSchema, type SchemaEntry } from '../editor/schema';
 import { PropControl } from './PropControl';
+import { StylesField } from './StylesField';
 
 interface Props {
   project: EsphomeProject;
@@ -56,13 +57,19 @@ export function PropertyPanel({ project }: Props) {
       </header>
 
       <div className="panel-body__rows">
-        {widget.styles.length > 0 && (
-          <ReadOnlyRow
-            label="styles"
-            value={widget.styles.join(', ')}
-            source={sources.styles}
-          />
-        )}
+        <StylesField
+          currentStyles={
+            'styles' in widgetOverrides
+              ? normalizeStyleOverride(widgetOverrides.styles)
+              : widget.styles
+          }
+          availableStyles={Object.keys(project.styles ?? {})}
+          source={sources.styles}
+          project={project}
+          hasOverride={'styles' in widgetOverrides}
+          onChange={(next) => updateProp(project, selectedWidgetId, 'styles', next)}
+          onRevert={() => updateProp(project, selectedWidgetId, 'styles', undefined)}
+        />
 
         {schema.map((entry) => {
           const source = sources.props[entry.key];
@@ -238,6 +245,13 @@ function OriginLine({ label, file }: { label: string; file: string }) {
 function shortFile(p: string): string {
   const parts = p.replace(/\\/g, '/').split('/');
   return parts.slice(-2).join('/');
+}
+
+/** Coerce whatever the override holds for `styles` back into a string[]. */
+function normalizeStyleOverride(v: unknown): string[] {
+  if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string');
+  if (typeof v === 'string') return [v];
+  return [];
 }
 
 function formatValue(v: unknown): string {

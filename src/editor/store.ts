@@ -284,10 +284,23 @@ function overrideWidget(
     ? widget.children.map((c) => overrideWidget(c, overrides, deletions))
     : widget.children;
   if (!patch && (!del || del.length === 0) && nextChildren === widget.children) return widget;
+
   let nextProps = widget.props;
+  let nextStyles = widget.styles;
   if (patch || (del && del.length > 0)) {
-    nextProps = { ...widget.props, ...(patch ?? {}) };
+    // `styles` is a separate field on LvglWidget (not part of props) because
+    // the renderer cascades them. Route overrides there; skip when the patch
+    // only touches props.
+    const { styles: styleOverride, ...propPatch } = patch ?? {};
+    nextProps = { ...widget.props, ...propPatch };
     if (del) for (const key of del) delete nextProps[key];
+    if (styleOverride !== undefined) {
+      nextStyles = Array.isArray(styleOverride)
+        ? (styleOverride as unknown[]).filter((x): x is string => typeof x === 'string')
+        : typeof styleOverride === 'string'
+          ? [styleOverride]
+          : [];
+    }
   }
-  return { ...widget, props: nextProps, children: nextChildren };
+  return { ...widget, props: nextProps, styles: nextStyles, children: nextChildren };
 }
