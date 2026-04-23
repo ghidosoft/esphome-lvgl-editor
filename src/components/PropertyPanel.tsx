@@ -16,7 +16,8 @@ interface Props {
  */
 export function PropertyPanel({ project }: Props) {
   const selectedWidgetId = useEditorStore((s) => s.selectedWidgetId);
-  const overrides = useEditorStore((s) => s.overrides);
+  const widgetOverridesMap = useEditorStore((s) => s.widgetOverrides);
+  const varOverrides = useEditorStore((s) => s.varOverrides);
   const updateProp = useEditorStore((s) => s.updateProp);
 
   if (!selectedWidgetId) {
@@ -29,7 +30,7 @@ export function PropertyPanel({ project }: Props) {
   }
 
   const schema = getSchema(widget.type);
-  const widgetOverrides = overrides[selectedWidgetId] ?? {};
+  const widgetOverrides = widgetOverridesMap[selectedWidgetId] ?? {};
 
   // Props covered by the schema render with controls, in schema order. Only
   // show rows for props that are either present on the widget (in source or
@@ -59,20 +60,33 @@ export function PropertyPanel({ project }: Props) {
           />
         )}
 
-        {schemaRows.map((entry) => (
-          <EditableRow
-            key={entry.key}
-            entry={entry}
-            widget={widget}
-            widgetId={selectedWidgetId}
-            source={sources.props[entry.key]}
-            project={project}
-            override={widgetOverrides[entry.key]}
-            hasOverride={entry.key in widgetOverrides}
-            onChange={(v) => updateProp(selectedWidgetId, entry.key, v)}
-            onRevert={() => updateProp(selectedWidgetId, entry.key, undefined)}
-          />
-        ))}
+        {schemaRows.map((entry) => {
+          const source = sources.props[entry.key];
+          const varName = source?.viaVariable;
+          // Resolve the effective value: varOverride wins for var-backed props,
+          // else widgetOverride, else the current widget prop.
+          const varOverride = varName ? varOverrides[varName] : undefined;
+          const hasVarOverride = varName != null && varName in varOverrides;
+          const hasWidgetOverride = entry.key in widgetOverrides;
+          const hasOverride = hasVarOverride || hasWidgetOverride;
+          const effective = hasVarOverride
+            ? varOverride
+            : hasWidgetOverride
+              ? widgetOverrides[entry.key]
+              : widget.props[entry.key];
+          return (
+            <EditableRow
+              key={entry.key}
+              entry={entry}
+              source={source}
+              project={project}
+              value={effective}
+              hasOverride={hasOverride}
+              onChange={(v) => updateProp(project, selectedWidgetId, entry.key, v)}
+              onRevert={() => updateProp(project, selectedWidgetId, entry.key, undefined)}
+            />
+          );
+        })}
 
         {extraRows.map((key) => (
           <ReadOnlyRow
@@ -94,26 +108,23 @@ export function PropertyPanel({ project }: Props) {
 
 function EditableRow({
   entry,
-  widget,
   source,
   project,
-  override,
+  value,
   hasOverride,
   onChange,
   onRevert,
 }: {
   entry: SchemaEntry;
-  widget: LvglWidget;
-  widgetId: WidgetId;
   source?: PropSource;
   project: EsphomeProject;
-  override: unknown;
+  value: unknown;
   hasOverride: boolean;
   onChange: (v: unknown) => void;
   onRevert: () => void;
 }) {
-  const raw = hasOverride ? override : widget.props[entry.key];
-  const disabled = !!source?.viaVariable || !!source?.template;
+  // Templates stay read-only for now (partial-string editing is non-trivial).
+  const disabled = !!source?.template;
   const sub = source?.viaVariable ? project.substitutions?.[source.viaVariable] : undefined;
   const rowClass = `prop-row ${hasOverride ? 'prop-row--dirty' : ''} ${disabled ? 'prop-row--disabled' : ''}`;
 
@@ -124,7 +135,7 @@ function EditableRow({
         {hasOverride && <span className="prop-row__dirty-dot" title="unsaved change" />}
       </div>
       <div className="prop-row__control">
-        <PropControl entry={entry} value={raw} onChange={onChange} disabled={disabled} />
+        <PropControl entry={entry} value={value} onChange={onChange} disabled={disabled} />
         {hasOverride && (
           <button type="button" className="prop-row__revert" title="Revert to source" onClick={onRevert}>
             ↺
@@ -132,14 +143,17 @@ function EditableRow({
         )}
       </div>
       {source?.viaVariable && (
-        <div className="prop-row__banner">
+        <div className="prop-row__banner prop-row__banner--var">
           Bound to <code>${'{'}{source.viaVariable}{'}'}</code>
-          {sub && <> · used by {sub.usages.length} widget{sub.usages.length === 1 ? '' : 's'}</>}
-          · editing variables is P4
+          {sub && (
+            <>
+              {' · '}edit affects {sub.usages.length} widget{sub.usages.length === 1 ? '' : 's'}
+            </>
+          )}
         </div>
       )}
       {source?.template && (
-        <div className="prop-row__banner">Mixed template — editing is P4</div>
+        <div className="prop-row__banner">Mixed template — editing not supported yet.</div>
       )}
       {source && <OriginLine label="from" file={source.file} />}
     </div>

@@ -5,26 +5,38 @@ import type { HitEntry } from '../renderer/CanvasStage';
 /**
  * Editor state shared by canvas, overlay, and side-panels.
  *
- * Overrides hold unsaved prop edits keyed by widget id. They are applied
- * locally to the project for live repaint (`applyOverrides`) and, on save,
- * translated into `EditOp`s sent to `/__lvgl/edit` + `/__lvgl/commit`.
+ * Two kinds of pending edits coexist:
+ *  - `widgetOverrides`: per-widget prop edits that are literal in the source
+ *    (no `${var}` binding). Written back to the widget's own file.
+ *  - `varOverrides`: edits to a substitution's value. They propagate to every
+ *    widget consuming the variable (previewed live, then written to the
+ *    substitution's definition file on save).
+ *
+ * When the user tweaks a var-backed prop (e.g. a widget whose `radius` was
+ * `${radius_card}`), `updateProp` dispatches to `varOverrides` under the hood
+ * — changing one widget changes every widget bound to that variable, which
+ * matches how ESPHome substitutions work.
  */
 export interface EditorState {
   selectedWidgetId: WidgetId | null;
   hitList: HitEntry[];
   activeTab: 'properties' | 'variables';
-  /** Per-widget pending prop edits. Key is widgetId → propKey → new value. */
-  overrides: Record<WidgetId, Record<string, unknown>>;
-  /** True while /__lvgl/edit + commit are in flight. */
+  widgetOverrides: Record<WidgetId, Record<string, unknown>>;
+  varOverrides: Record<string, string>;
   saving: boolean;
-  /** Last save error (network failure, conflict, etc.), cleared on next save attempt. */
   saveError: string | null;
 
   setSelected: (id: WidgetId | null) => void;
   setHitList: (list: HitEntry[]) => void;
   setActiveTab: (tab: 'properties' | 'variables') => void;
-  /** Apply (or clear) a pending override. Pass undefined to revert to source. */
-  updateProp: (id: WidgetId, key: string, value: unknown) => void;
+  /**
+   * Update a widget property. Dispatches to `varOverrides` when the prop was
+   * bound to `${var}` in the source — editing the var is what the user
+   * actually wants in that case.
+   */
+  updateProp: (project: EsphomeProject, id: WidgetId, key: string, value: unknown) => void;
+  /** Update a substitution's value directly (used by VariablesPanel). */
+  updateVar: (name: string, value: string | undefined) => void;
   clearOverrides: () => void;
   setSaving: (v: boolean) => void;
   setSaveError: (e: string | null) => void;
@@ -34,38 +46,48 @@ export const useEditorStore = create<EditorState>((set) => ({
   selectedWidgetId: null,
   hitList: [],
   activeTab: 'properties',
-  overrides: {},
+  widgetOverrides: {},
+  varOverrides: {},
   saving: false,
   saveError: null,
 
   setSelected: (id) => set({ selectedWidgetId: id }),
   setHitList: (list) => set({ hitList: list }),
   setActiveTab: (tab) => set({ activeTab: tab }),
-  updateProp: (id, key, value) =>
+  updateProp: (project, id, key, value) =>
     set((s) => {
-      const next = { ...s.overrides };
+      const propSource = project.sources?.[id]?.props[key];
+      // Route var-backed edits to the substitution: changing "this radius"
+      // actually means "change the radius_card variable".
+      if (propSource?.viaVariable) {
+        const varName = propSource.viaVariable;
+        const nextVars = { ...s.varOverrides };
+        if (value === undefined) delete nextVars[varName];
+        else nextVars[varName] = String(value);
+        return { varOverrides: nextVars };
+      }
+      const next = { ...s.widgetOverrides };
       const forWidget = { ...(next[id] ?? {}) };
-      if (value === undefined) {
-        delete forWidget[key];
-      } else {
-        forWidget[key] = value;
-      }
-      if (Object.keys(forWidget).length === 0) {
-        delete next[id];
-      } else {
-        next[id] = forWidget;
-      }
-      return { overrides: next };
+      if (value === undefined) delete forWidget[key];
+      else forWidget[key] = value;
+      if (Object.keys(forWidget).length === 0) delete next[id];
+      else next[id] = forWidget;
+      return { widgetOverrides: next };
     }),
-  clearOverrides: () => set({ overrides: {} }),
+  updateVar: (name, value) =>
+    set((s) => {
+      const nextVars = { ...s.varOverrides };
+      if (value === undefined) delete nextVars[name];
+      else nextVars[name] = value;
+      return { varOverrides: nextVars };
+    }),
+  clearOverrides: () => set({ widgetOverrides: {}, varOverrides: {} }),
   setSaving: (v) => set({ saving: v }),
   setSaveError: (e) => set({ saveError: e }),
 }));
 
 /**
  * Returns the topmost (deepest) widget whose box contains the point, or null.
- * Scans the hit list in reverse order so the child painted last (visually on
- * top) wins.
  */
 export function hitTest(hits: HitEntry[], x: number, y: number): HitEntry | null {
   for (let i = hits.length - 1; i >= 0; i--) {
@@ -78,16 +100,43 @@ export function hitTest(hits: HitEntry[], x: number, y: number): HitEntry | null
 }
 
 /**
- * Produce a copy of `project` with `overrides` merged onto the matching widgets.
- * Returns the same reference when there are no overrides (caller can use it as
- * a cheap memo key for the canvas).
+ * Produce a copy of `project` with pending overrides merged onto the matching
+ * widgets. Two passes:
+ *   1. widget-specific overrides (written directly onto widget.props)
+ *   2. var overrides: resolve each substitution's `usages` list and apply the
+ *      new value to every consumer (so the canvas preview matches post-save).
+ *
+ * Returns the original reference when there's nothing to merge.
  */
 export function applyOverrides(
   project: EsphomeProject,
-  overrides: Record<WidgetId, Record<string, unknown>>,
+  widgetOverrides: Record<WidgetId, Record<string, unknown>>,
+  varOverrides: Record<string, string>,
 ): EsphomeProject {
-  if (!project.pages.length || Object.keys(overrides).length === 0) return project;
-  return { ...project, pages: project.pages.map((p) => overridePage(p, overrides)) };
+  const hasWidgetOverrides = Object.keys(widgetOverrides).length > 0;
+  const hasVarOverrides = Object.keys(varOverrides).length > 0;
+  if (!project.pages.length || (!hasWidgetOverrides && !hasVarOverrides)) return project;
+
+  // Combine: start with widget overrides, then add var overrides expanded to
+  // each consumer (widget-specific edits win on conflict — more local).
+  const combined: Record<WidgetId, Record<string, unknown>> = {};
+  for (const [id, patch] of Object.entries(widgetOverrides)) {
+    combined[id] = { ...patch };
+  }
+  if (hasVarOverrides && project.substitutions) {
+    for (const [varName, newValue] of Object.entries(varOverrides)) {
+      const entry = project.substitutions[varName];
+      if (!entry) continue;
+      for (const usage of entry.usages) {
+        const forWidget = (combined[usage.widgetId] ||= {});
+        if (!(usage.propKey in forWidget)) {
+          forWidget[usage.propKey] = newValue;
+        }
+      }
+    }
+  }
+
+  return { ...project, pages: project.pages.map((p) => overridePage(p, combined)) };
 }
 
 function overridePage(page: LvglPage, overrides: Record<WidgetId, Record<string, unknown>>): LvglPage {

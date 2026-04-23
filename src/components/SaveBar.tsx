@@ -14,29 +14,32 @@ interface Props {
  * Floating bar on the canvas stage with pending-edit count and Save action.
  * Hidden when there's nothing to save.
  *
- * Save flow: translate overrides → ops, POST /__lvgl/edit (server mutates CST
- * in memory), then POST /__lvgl/commit (server writes dirty files). On
+ * Save flow: translate overrides → ops, POST /__lvgl/edit (server mutates
+ * CST in memory), then POST /__lvgl/commit (server writes dirty files). On
  * success: clear overrides, ask the project hook to refetch so the new
  * source-map reflects on-disk state.
  */
 export function SaveBar({ project, projectName, onSaved }: Props) {
-  const overrides = useEditorStore((s) => s.overrides);
+  const widgetOverrides = useEditorStore((s) => s.widgetOverrides);
+  const varOverrides = useEditorStore((s) => s.varOverrides);
   const saving = useEditorStore((s) => s.saving);
   const saveError = useEditorStore((s) => s.saveError);
   const setSaving = useEditorStore((s) => s.setSaving);
   const setSaveError = useEditorStore((s) => s.setSaveError);
   const clearOverrides = useEditorStore((s) => s.clearOverrides);
 
-  const { ops, skipped } = useMemo(() => buildEditOps(project, overrides), [project, overrides]);
+  const { ops, skipped } = useMemo(
+    () => buildEditOps(project, widgetOverrides, varOverrides),
+    [project, widgetOverrides, varOverrides],
+  );
 
-  const dirtyWidgetCount = Object.keys(overrides).length;
-  const hasAnything = dirtyWidgetCount > 0;
+  const widgetCount = Object.keys(widgetOverrides).length;
+  const varCount = Object.keys(varOverrides).length;
+  const hasAnything = widgetCount + varCount > 0;
 
   async function doSave() {
     if (ops.length === 0) {
-      // Nothing the server can actually persist (all overrides are var-backed
-      // or otherwise deferred). Surface it rather than silently "succeed".
-      setSaveError('No saveable changes — variable-backed edits need P4.');
+      setSaveError('No saveable changes — all pending edits are in an unsupported form.');
       return;
     }
     setSaving(true);
@@ -53,7 +56,6 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
     }
   }
 
-  // Ctrl/Cmd+S shortcut.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
@@ -73,10 +75,26 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
     <div className="save-bar">
       <div className="save-bar__main">
         <span className="save-bar__count">
-          {dirtyWidgetCount} widget{dirtyWidgetCount === 1 ? '' : 's'} with unsaved edits
+          {widgetCount > 0 && (
+            <>
+              {widgetCount} widget{widgetCount === 1 ? '' : 's'}
+            </>
+          )}
+          {widgetCount > 0 && varCount > 0 && ' · '}
+          {varCount > 0 && (
+            <>
+              {varCount} variable{varCount === 1 ? '' : 's'}
+            </>
+          )}
+          {' with unsaved edits'}
         </span>
         {skipped.length > 0 && (
-          <span className="save-bar__skipped" title={skipped.map((s) => `${s.propKey}: ${s.reason}`).join('\n')}>
+          <span
+            className="save-bar__skipped"
+            title={skipped
+              .map((s) => `${s.varName ?? `${s.widgetId}.${s.propKey}`}: ${s.reason}`)
+              .join('\n')}
+          >
             · {skipped.length} deferred
           </span>
         )}

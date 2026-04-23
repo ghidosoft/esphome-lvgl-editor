@@ -328,6 +328,16 @@ html, body, #root { height: 100%; margin: 0; }
   padding: 0;
 }
 .var-row__jump:hover { text-decoration: underline; }
+.var-row__control { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.var-row--dirty { box-shadow: inset 2px 0 0 var(--accent); }
+.prop-row__banner--var {
+  color: var(--accent);
+  background: rgba(58, 160, 255, 0.08);
+  padding: 4px 8px;
+  border-radius: 3px;
+  margin-top: 6px;
+}
+.prop-row__banner--var code { color: var(--accent); background: transparent; padding: 0; }
 
 /* ---------- Prop controls ---------- */
 .prop-row__control {

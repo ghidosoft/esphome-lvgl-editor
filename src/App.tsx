@@ -42,14 +42,15 @@ function ProjectShell({ projects }: { projects: { name: string; hasLvgl: boolean
   const params = useParams<{ name: string; pageId?: string }>();
   const name = params.name!;
   const project = useProject(name);
-  const overrides = useEditorStore((s) => s.overrides);
+  const widgetOverrides = useEditorStore((s) => s.widgetOverrides);
+  const varOverrides = useEditorStore((s) => s.varOverrides);
 
   // Merge pending edits onto the source project so the canvas repaints locally
   // while edits are unsaved. Memoized on the shallow identity of `project.data`
-  // and `overrides` so paint stays cheap.
+  // and overrides so paint stays cheap.
   const derivedProject = useMemo(
-    () => (project.data ? applyOverrides(project.data, overrides) : null),
-    [project.data, overrides],
+    () => (project.data ? applyOverrides(project.data, widgetOverrides, varOverrides) : null),
+    [project.data, widgetOverrides, varOverrides],
   );
 
   // Default to first non-skip page (mirrors the device's startup page).

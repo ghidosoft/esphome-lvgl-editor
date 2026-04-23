@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { EsphomeProject } from '../parser/types';
 import { useEditorStore } from '../editor/store';
 
@@ -7,13 +7,15 @@ interface Props {
 }
 
 /**
- * Read-only list of ESPHome `substitutions:` detected in the project, with
- * the number of widgets each variable is bound to and a "jump to first usage"
- * action. Editing variable values is P4.
+ * List ESPHome `substitutions:` defined in the project with per-var editable
+ * value, usage count, and "jump to first usage" action. Edits are staged in
+ * `varOverrides` on the editor store and flushed by the top-level Save flow.
  */
 export function VariablesPanel({ project }: Props) {
   const substitutions = project.substitutions ?? {};
   const setSelected = useEditorStore((s) => s.setSelected);
+  const varOverrides = useEditorStore((s) => s.varOverrides);
+  const updateVar = useEditorStore((s) => s.updateVar);
   const [filter, setFilter] = useState('');
 
   const entries = useMemo(() => {
@@ -38,26 +40,84 @@ export function VariablesPanel({ project }: Props) {
         />
       </div>
       <div className="panel-body__rows">
-        {entries.map(([name, entry]) => (
-          <div key={name} className="var-row">
-            <div className="var-row__name">${'{'}{name}{'}'}</div>
-            <div className="var-row__value">{entry.value}</div>
-            <div className="var-row__meta">
-              <span className="var-row__count" title={`Defined in ${shortFile(entry.file)}`}>
-                {entry.usages.length} use{entry.usages.length === 1 ? '' : 's'}
-              </span>
-              {entry.usages.length > 0 && (
-                <button
-                  type="button"
-                  className="var-row__jump"
-                  onClick={() => setSelected(entry.usages[0].widgetId)}
-                >
-                  jump →
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+        {entries.map(([name, entry]) => {
+          const hasOverride = name in varOverrides;
+          const value = hasOverride ? varOverrides[name] : entry.value;
+          return (
+            <VarRow
+              key={name}
+              name={name}
+              value={value}
+              originalValue={entry.value}
+              usageCount={entry.usages.length}
+              fileHint={shortFile(entry.file)}
+              hasOverride={hasOverride}
+              onChange={(v) => updateVar(name, v === entry.value ? undefined : v)}
+              onRevert={() => updateVar(name, undefined)}
+              onJump={entry.usages.length > 0 ? () => setSelected(entry.usages[0].widgetId) : undefined}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function VarRow({
+  name,
+  value,
+  usageCount,
+  fileHint,
+  hasOverride,
+  onChange,
+  onRevert,
+  onJump,
+}: {
+  name: string;
+  value: string;
+  originalValue: string;
+  usageCount: number;
+  fileHint: string;
+  hasOverride: boolean;
+  onChange: (v: string) => void;
+  onRevert: () => void;
+  onJump?: () => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+
+  return (
+    <div className={`var-row ${hasOverride ? 'var-row--dirty' : ''}`}>
+      <div className="var-row__name">
+        ${'{'}{name}{'}'}
+        {hasOverride && <span className="prop-row__dirty-dot" title="unsaved change" />}
+      </div>
+      <div className="var-row__control">
+        <input
+          type="text"
+          className="prop-input"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => { if (draft !== value) onChange(draft); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
+          }}
+        />
+        {hasOverride && (
+          <button type="button" className="prop-row__revert" title="Revert to source" onClick={onRevert}>
+            ↺
+          </button>
+        )}
+      </div>
+      <div className="var-row__meta">
+        <span className="var-row__count" title={`Defined in ${fileHint}`}>
+          {usageCount} use{usageCount === 1 ? '' : 's'}
+        </span>
+        {onJump && (
+          <button type="button" className="var-row__jump" onClick={onJump}>
+            jump →
+          </button>
+        )}
       </div>
     </div>
   );
