@@ -23,6 +23,8 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
   const widgetOverrides = useEditorStore((s) => s.widgetOverrides);
   const varOverrides = useEditorStore((s) => s.varOverrides);
   const widgetDeletions = useEditorStore((s) => s.widgetDeletions);
+  const styleOverrides = useEditorStore((s) => s.styleOverrides);
+  const styleDeletions = useEditorStore((s) => s.styleDeletions);
   const saving = useEditorStore((s) => s.saving);
   const saveError = useEditorStore((s) => s.saveError);
   const setSaving = useEditorStore((s) => s.setSaving);
@@ -30,14 +32,24 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
   const clearOverrides = useEditorStore((s) => s.clearOverrides);
 
   const { ops, skipped } = useMemo(
-    () => buildEditOps(project, widgetOverrides, varOverrides, widgetDeletions),
-    [project, widgetOverrides, varOverrides, widgetDeletions],
+    () =>
+      buildEditOps(
+        project,
+        widgetOverrides,
+        varOverrides,
+        widgetDeletions,
+        styleOverrides,
+        styleDeletions,
+      ),
+    [project, widgetOverrides, varOverrides, widgetDeletions, styleOverrides, styleDeletions],
   );
 
   const dirtyWidgetIds = new Set([...Object.keys(widgetOverrides), ...Object.keys(widgetDeletions)]);
+  const dirtyStyleIds = new Set([...Object.keys(styleOverrides), ...Object.keys(styleDeletions)]);
   const widgetCount = dirtyWidgetIds.size;
+  const styleCount = dirtyStyleIds.size;
   const varCount = Object.keys(varOverrides).length;
-  const hasAnything = widgetCount + varCount > 0;
+  const hasAnything = widgetCount + styleCount + varCount > 0;
 
   async function doSave() {
     if (ops.length === 0) {
@@ -77,24 +89,23 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
     <div className="save-bar">
       <div className="save-bar__main">
         <span className="save-bar__count">
-          {widgetCount > 0 && (
-            <>
-              {widgetCount} widget{widgetCount === 1 ? '' : 's'}
-            </>
-          )}
-          {widgetCount > 0 && varCount > 0 && ' · '}
-          {varCount > 0 && (
-            <>
-              {varCount} variable{varCount === 1 ? '' : 's'}
-            </>
-          )}
+          {[
+            widgetCount > 0 ? `${widgetCount} widget${widgetCount === 1 ? '' : 's'}` : null,
+            styleCount > 0 ? `${styleCount} style${styleCount === 1 ? '' : 's'}` : null,
+            varCount > 0 ? `${varCount} variable${varCount === 1 ? '' : 's'}` : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
           {' with unsaved edits'}
         </span>
         {skipped.length > 0 && (
           <span
             className="save-bar__skipped"
             title={skipped
-              .map((s) => `${s.varName ?? `${s.widgetId}.${s.propKey}`}: ${s.reason}`)
+              .map((s) => {
+                const owner = s.varName ?? s.styleId ?? s.widgetId ?? '?';
+                return `${owner}${s.propKey ? `.${s.propKey}` : ''}: ${s.reason}`;
+              })
               .join('\n')}
           >
             · {skipped.length} deferred

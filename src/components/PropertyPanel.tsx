@@ -191,7 +191,7 @@ function EditableRow({
           Bound to <code>${'{'}{source.viaVariable}{'}'}</code>
           {sub && (
             <>
-              {' · '}edit affects {sub.usages.length} widget{sub.usages.length === 1 ? '' : 's'}
+              {' · '}edit affects {sub.usages.length} place{sub.usages.length === 1 ? '' : 's'}
             </>
           )}
         </div>

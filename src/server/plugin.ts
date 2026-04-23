@@ -137,7 +137,13 @@ export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
           const written: string[] = [];
           for (const path of entry.registry.dirtyFiles()) {
             const fileEntry = entry.registry.get(path)!;
-            let text = fileEntry.doc.toString();
+            let text = fileEntry.doc.toString({
+              // Reduce cosmetic diffs from eemeli's re-stringify: keep flow
+              // collections unpadded (`['x']` not `[ 'x' ]`) and never wrap
+              // long scalars onto a follow-up line.
+              flowCollectionPadding: false,
+              lineWidth: 0,
+            });
             // eemeli/yaml writes PUA codepoints (Material Symbols glyphs etc.)
             // as literal UTF-8 characters. ESPHome YAML files conventionally
             // use `\uXXXX` escapes for these. If the original file did so,

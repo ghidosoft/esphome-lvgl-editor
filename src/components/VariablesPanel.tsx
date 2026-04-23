@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { EsphomeProject } from '../parser/types';
+import type { EsphomeProject, SubstitutionUsage, WidgetId } from '../parser/types';
 import { useEditorStore } from '../editor/store';
 import { isColorLike, toHexColor, toLvglHex } from '../editor/colors';
+
+/** First widget-kind usage — only widgets are selectable on the canvas. */
+function jumpTarget(usages: SubstitutionUsage[]): WidgetId | null {
+  for (const u of usages) if (u.kind === 'widget') return u.widgetId;
+  return null;
+}
 
 interface Props {
   project: EsphomeProject;
@@ -55,7 +61,10 @@ export function VariablesPanel({ project }: Props) {
               hasOverride={hasOverride}
               onChange={(v) => updateVar(name, v === entry.value ? undefined : v)}
               onRevert={() => updateVar(name, undefined)}
-              onJump={entry.usages.length > 0 ? () => setSelected(entry.usages[0].widgetId) : undefined}
+              onJump={jumpTarget(entry.usages) != null ? () => {
+                const id = jumpTarget(entry.usages);
+                if (id) setSelected(id);
+              } : undefined}
             />
           );
         })}

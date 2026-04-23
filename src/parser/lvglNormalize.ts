@@ -8,6 +8,7 @@ import type {
   LvglWidget,
   ParseError,
   StyleSpec,
+  StylePropSources,
   TrackSize,
   WidgetId,
   WidgetPropSources,
@@ -54,21 +55,20 @@ export function normalizeProject(args: {
   const lvglOrigin = originMap.lvgl;
 
   const fonts = readFonts(doc);
-  const styles = lvgl ? readStyles(lvgl) : {};
 
   const sources: Record<WidgetId, WidgetPropSources> = {};
+  const styleSources: Record<string, StylePropSources> = {};
   const usagesByVar: Record<string, SubstitutionEntry['usages']> = {};
 
+  const lvglOriginMap =
+    lvglOrigin && typeof lvglOrigin === 'object' && !Array.isArray(lvglOrigin) && !isOriginLeaf(lvglOrigin)
+      ? (lvglOrigin as Record<string, OriginNode>)
+      : {};
+
+  const styles = lvgl ? readStyles(lvgl, lvglOriginMap.style_definitions, styleSources, usagesByVar) : {};
+
   const pages = lvgl
-    ? readPages(
-        lvgl,
-        (lvglOrigin && typeof lvglOrigin === 'object' && !Array.isArray(lvglOrigin) && !isOriginLeaf(lvglOrigin)
-          ? (lvglOrigin as Record<string, OriginNode>)
-          : {}),
-        errors,
-        sources,
-        usagesByVar,
-      )
+    ? readPages(lvgl, lvglOriginMap, errors, sources, usagesByVar)
     : [];
 
   const substitutions = buildSubstitutionEntries(subs, subsOrigin, usagesByVar);
@@ -83,6 +83,7 @@ export function normalizeProject(args: {
     pages,
     errors,
     sources,
+    styleSources,
     substitutions,
     files,
   };
@@ -120,17 +121,48 @@ function readFonts(doc: Record<string, unknown>): Record<string, FontSpec> {
   return out;
 }
 
-function readStyles(lvgl: Record<string, unknown>): Record<string, StyleSpec> {
+function readStyles(
+  lvgl: Record<string, unknown>,
+  stylesOrigin: OriginNode | undefined,
+  styleSources: Record<string, StylePropSources>,
+  usagesByVar: Record<string, SubstitutionEntry['usages']>,
+): Record<string, StyleSpec> {
   const out: Record<string, StyleSpec> = {};
   const list = lvgl.style_definitions;
   if (!Array.isArray(list)) return out;
-  for (const entry of list) {
+  const originArr = Array.isArray(stylesOrigin) ? stylesOrigin : [];
+  for (let i = 0; i < list.length; i++) {
+    const entry = list[i];
     if (!entry || typeof entry !== 'object') continue;
     const e = entry as Record<string, unknown>;
     const id = typeof e.id === 'string' ? e.id : undefined;
     if (!id) continue;
     const { id: _drop, ...props } = e;
     out[id] = { id, props };
+
+    const entryOrigin = originArr[i];
+    const entryOriginMap =
+      entryOrigin && typeof entryOrigin === 'object' && !Array.isArray(entryOrigin) && !isOriginLeaf(entryOrigin)
+        ? (entryOrigin as Record<string, OriginNode>)
+        : {};
+    const selfOrigin = readOrigin(entryOrigin as object);
+    if (!selfOrigin) continue;
+
+    const propSources: Record<string, PropSource> = {};
+    for (const key of Object.keys(props)) {
+      const leaf = entryOriginMap[key];
+      const src = toPropSource(leaf);
+      if (src) {
+        propSources[key] = src;
+        if (src.viaVariable) {
+          (usagesByVar[src.viaVariable] ||= []).push({ kind: 'style', styleId: id, propKey: key });
+        }
+      }
+    }
+    styleSources[id] = {
+      self: { file: selfOrigin.file, yamlPath: selfOrigin.yamlPath },
+      props: propSources,
+    };
   }
   return out;
 }
@@ -242,7 +274,7 @@ function readWidget(
       if (src) {
         propSources[key] = src;
         if (src.viaVariable) {
-          (usagesByVar[src.viaVariable] ||= []).push({ widgetId, propKey: key });
+          (usagesByVar[src.viaVariable] ||= []).push({ kind: 'widget', widgetId, propKey: key });
         }
       }
     }

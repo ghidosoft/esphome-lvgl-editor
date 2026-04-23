@@ -2,6 +2,7 @@ import type { EsphomeProject } from '../parser/types';
 import { useEditorStore } from '../editor/store';
 import { PropertyPanel } from './PropertyPanel';
 import { VariablesPanel } from './VariablesPanel';
+import { StylesPanel } from './StylesPanel';
 
 interface Props {
   project: EsphomeProject;
@@ -17,6 +18,7 @@ export function EditorPanel({ project }: Props) {
   const setActiveTab = useEditorStore((s) => s.setActiveTab);
 
   const varCount = Object.keys(project.substitutions ?? {}).length;
+  const styleCount = Object.keys(project.styles ?? {}).length;
 
   return (
     <aside className="editor-panel">
@@ -33,6 +35,15 @@ export function EditorPanel({ project }: Props) {
         <button
           type="button"
           role="tab"
+          aria-selected={activeTab === 'styles'}
+          className={`editor-panel__tab ${activeTab === 'styles' ? 'editor-panel__tab--active' : ''}`}
+          onClick={() => setActiveTab('styles')}
+        >
+          Styles <span className="editor-panel__tab-count">{styleCount}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={activeTab === 'variables'}
           className={`editor-panel__tab ${activeTab === 'variables' ? 'editor-panel__tab--active' : ''}`}
           onClick={() => setActiveTab('variables')}
@@ -41,7 +52,9 @@ export function EditorPanel({ project }: Props) {
         </button>
       </div>
       <div className="editor-panel__content">
-        {activeTab === 'properties' ? <PropertyPanel project={project} /> : <VariablesPanel project={project} />}
+        {activeTab === 'properties' && <PropertyPanel project={project} />}
+        {activeTab === 'styles' && <StylesPanel project={project} />}
+        {activeTab === 'variables' && <VariablesPanel project={project} />}
       </div>
     </aside>
   );

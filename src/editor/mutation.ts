@@ -8,16 +8,20 @@ import type { EsphomeProject, WidgetId } from '../parser/types';
 export interface EditOp {
   file: string;
   yamlPath: (string | number)[];
-  /** `set` writes `newValue` at `yamlPath`; `delete` removes the key. */
   op: 'set' | 'delete';
-  /** Present when op === 'set'. */
   newValue?: string | number | boolean | null;
 }
 
 export interface EditBuildResult {
   ops: EditOp[];
   /** Pending edits that cannot be applied yet (reason explains why). */
-  skipped: Array<{ widgetId?: WidgetId; propKey?: string; varName?: string; reason: string }>;
+  skipped: Array<{
+    widgetId?: WidgetId;
+    styleId?: string;
+    propKey?: string;
+    varName?: string;
+    reason: string;
+  }>;
 }
 
 /**
@@ -25,21 +29,19 @@ export interface EditBuildResult {
  * edit ops.
  *
  * Sources of ops:
- *   - Widget overrides on literal props → `set` at the prop's yamlPath.
- *   - Widget overrides on props not yet in the source → `set` at
- *     `<widgetSelf>/<widgetType>/<propKey>` (adds a new key).
- *   - Widget deletions → `delete` at the prop's yamlPath.
- *   - Var overrides (from VariablesPanel or implicitly from editing a
- *     var-backed prop) → `set` at the substitution's definition file.
- *
- * Template props and var-backed writes via widget overrides are surfaced as
- * `skipped` with a reason so the UI can explain.
+ *   - Widget/style overrides on literal props → `set` at the prop's yamlPath.
+ *   - Overrides on props not yet in source → `set` at
+ *     `<owner.yamlPath>/[widgetType]/<propKey>` (adds a new key).
+ *   - Widget/style deletions → `delete` at the prop's yamlPath.
+ *   - Var overrides → `set` at the substitution's definition file.
  */
 export function buildEditOps(
   project: EsphomeProject,
   widgetOverrides: Record<WidgetId, Record<string, unknown>>,
   varOverrides: Record<string, string>,
   widgetDeletions: Record<WidgetId, string[]> = {},
+  styleOverrides: Record<string, Record<string, unknown>> = {},
+  styleDeletions: Record<string, string[]> = {},
 ): EditBuildResult {
   const ops: EditOp[] = [];
   const skipped: EditBuildResult['skipped'] = [];
@@ -55,7 +57,6 @@ export function buildEditOps(
     for (const [propKey, value] of Object.entries(patch)) {
       const propSource = sources.props[propKey];
       if (!propSource) {
-        // Prop not yet in source — add it under the widget's mapping.
         ops.push({
           op: 'set',
           file: sources.self.file,
@@ -93,12 +94,66 @@ export function buildEditOps(
     }
     for (const key of keys) {
       const propSource = sources.props[key];
+      if (!propSource) continue; // already absent — nothing to delete on disk
+      if (propSource.viaVariable) {
+        skipped.push({ widgetId, propKey: key, reason: 'cannot remove a var-backed prop (P5 detach)' });
+        continue;
+      }
+      ops.push({ op: 'delete', file: propSource.file, yamlPath: propSource.yamlPath });
+    }
+  }
+
+  for (const [styleId, patch] of Object.entries(styleOverrides)) {
+    const sources = project.styleSources?.[styleId];
+    if (!sources) {
+      for (const key of Object.keys(patch)) {
+        skipped.push({ styleId, propKey: key, reason: 'no source map entry' });
+      }
+      continue;
+    }
+    for (const [propKey, value] of Object.entries(patch)) {
+      const propSource = sources.props[propKey];
       if (!propSource) {
-        // Already absent from the source — nothing to delete on disk.
+        ops.push({
+          op: 'set',
+          file: sources.self.file,
+          yamlPath: [...sources.self.yamlPath, propKey],
+          newValue: coerceScalar(value),
+        });
+        continue;
+      }
+      if (propSource.template) {
+        skipped.push({ styleId, propKey, reason: 'mixed template strings are read-only' });
         continue;
       }
       if (propSource.viaVariable) {
-        skipped.push({ widgetId, propKey: key, reason: 'cannot remove a var-backed prop (P5 detach)' });
+        skipped.push({
+          styleId,
+          propKey,
+          reason: `var-backed (\${${propSource.viaVariable}}) — edit via Variables`,
+        });
+        continue;
+      }
+      ops.push({
+        op: 'set',
+        file: propSource.file,
+        yamlPath: propSource.yamlPath,
+        newValue: coerceScalar(value),
+      });
+    }
+  }
+
+  for (const [styleId, keys] of Object.entries(styleDeletions)) {
+    const sources = project.styleSources?.[styleId];
+    if (!sources) {
+      for (const key of keys) skipped.push({ styleId, propKey: key, reason: 'no source map entry' });
+      continue;
+    }
+    for (const key of keys) {
+      const propSource = sources.props[key];
+      if (!propSource) continue;
+      if (propSource.viaVariable) {
+        skipped.push({ styleId, propKey: key, reason: 'cannot remove a var-backed prop (P5 detach)' });
         continue;
       }
       ops.push({ op: 'delete', file: propSource.file, yamlPath: propSource.yamlPath });
@@ -122,7 +177,6 @@ export function buildEditOps(
   return { ops, skipped };
 }
 
-/** Narrow an unknown override value to a JSON-safe scalar for the wire. */
 function coerceScalar(v: unknown): EditOp['newValue'] {
   if (v == null) return null;
   if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return v;

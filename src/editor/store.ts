@@ -20,17 +20,21 @@ import type { HitEntry } from '../renderer/CanvasStage';
 export interface EditorState {
   selectedWidgetId: WidgetId | null;
   hitList: HitEntry[];
-  activeTab: 'properties' | 'variables';
+  activeTab: 'properties' | 'variables' | 'styles';
   widgetOverrides: Record<WidgetId, Record<string, unknown>>;
   varOverrides: Record<string, string>;
+  /** Per-style prop edits. Same shape as widgetOverrides. */
+  styleOverrides: Record<string, Record<string, unknown>>;
   /** Per-widget set of prop keys pending removal from the YAML source. */
   widgetDeletions: Record<WidgetId, string[]>;
+  /** Per-style set of prop keys pending removal. */
+  styleDeletions: Record<string, string[]>;
   saving: boolean;
   saveError: string | null;
 
   setSelected: (id: WidgetId | null) => void;
   setHitList: (list: HitEntry[]) => void;
-  setActiveTab: (tab: 'properties' | 'variables') => void;
+  setActiveTab: (tab: 'properties' | 'variables' | 'styles') => void;
   /**
    * Update a widget property. Dispatches to `varOverrides` when the prop was
    * bound to `${var}` in the source — editing the var is what the user
@@ -38,8 +42,15 @@ export interface EditorState {
    * (override or deletion) and leaves the source value intact.
    */
   updateProp: (project: EsphomeProject, id: WidgetId, key: string, value: unknown) => void;
-  /** Mark a prop for removal from the YAML source on save. Clears any pending override on the same key. */
+  /** Mark a widget prop for removal from the YAML source on save. */
   deleteProp: (id: WidgetId, key: string) => void;
+  /**
+   * Update a style's property. Dispatches to `varOverrides` for var-backed
+   * props, otherwise stores in `styleOverrides`.
+   */
+  updateStyleProp: (project: EsphomeProject, styleId: string, key: string, value: unknown) => void;
+  /** Mark a style prop for removal from the YAML source on save. */
+  deleteStyleProp: (styleId: string, key: string) => void;
   /** Update a substitution's value directly (used by VariablesPanel). */
   updateVar: (name: string, value: string | undefined) => void;
   clearOverrides: () => void;
@@ -53,7 +64,9 @@ export const useEditorStore = create<EditorState>((set) => ({
   activeTab: 'properties',
   widgetOverrides: {},
   varOverrides: {},
+  styleOverrides: {},
   widgetDeletions: {},
+  styleDeletions: {},
   saving: false,
   saveError: null,
 
@@ -99,6 +112,41 @@ export const useEditorStore = create<EditorState>((set) => ({
       }
       return { widgetDeletions: nextDel, widgetOverrides: nextOv };
     }),
+  updateStyleProp: (project, styleId, key, value) =>
+    set((s) => {
+      const propSource = project.styleSources?.[styleId]?.props[key];
+      if (propSource?.viaVariable) {
+        const varName = propSource.viaVariable;
+        const nextVars = { ...s.varOverrides };
+        if (value === undefined) delete nextVars[varName];
+        else nextVars[varName] = String(value);
+        return { varOverrides: nextVars };
+      }
+      const nextOv = { ...s.styleOverrides };
+      const forStyle = { ...(nextOv[styleId] ?? {}) };
+      if (value === undefined) delete forStyle[key];
+      else forStyle[key] = value;
+      if (Object.keys(forStyle).length === 0) delete nextOv[styleId];
+      else nextOv[styleId] = forStyle;
+      const nextDel = { ...s.styleDeletions };
+      const keys = (nextDel[styleId] ?? []).filter((k) => k !== key);
+      if (keys.length === 0) delete nextDel[styleId];
+      else nextDel[styleId] = keys;
+      return { styleOverrides: nextOv, styleDeletions: nextDel };
+    }),
+  deleteStyleProp: (styleId, key) =>
+    set((s) => {
+      const nextDel = { ...s.styleDeletions };
+      const existing = nextDel[styleId] ?? [];
+      if (!existing.includes(key)) nextDel[styleId] = [...existing, key];
+      const nextOv = { ...s.styleOverrides };
+      if (nextOv[styleId]) {
+        const { [key]: _drop, ...rest } = nextOv[styleId];
+        if (Object.keys(rest).length === 0) delete nextOv[styleId];
+        else nextOv[styleId] = rest;
+      }
+      return { styleDeletions: nextDel, styleOverrides: nextOv };
+    }),
   updateVar: (name, value) =>
     set((s) => {
       const nextVars = { ...s.varOverrides };
@@ -106,7 +154,14 @@ export const useEditorStore = create<EditorState>((set) => ({
       else nextVars[name] = value;
       return { varOverrides: nextVars };
     }),
-  clearOverrides: () => set({ widgetOverrides: {}, varOverrides: {}, widgetDeletions: {} }),
+  clearOverrides: () =>
+    set({
+      widgetOverrides: {},
+      varOverrides: {},
+      widgetDeletions: {},
+      styleOverrides: {},
+      styleDeletions: {},
+    }),
   setSaving: (v) => set({ saving: v }),
   setSaveError: (e) => set({ saveError: e }),
 }));
@@ -138,33 +193,77 @@ export function applyOverrides(
   widgetOverrides: Record<WidgetId, Record<string, unknown>>,
   varOverrides: Record<string, string>,
   widgetDeletions: Record<WidgetId, string[]> = {},
+  styleOverrides: Record<string, Record<string, unknown>> = {},
+  styleDeletions: Record<string, string[]> = {},
 ): EsphomeProject {
   const hasWidgetOverrides = Object.keys(widgetOverrides).length > 0;
   const hasVarOverrides = Object.keys(varOverrides).length > 0;
-  const hasDeletions = Object.keys(widgetDeletions).length > 0;
-  if (!project.pages.length || (!hasWidgetOverrides && !hasVarOverrides && !hasDeletions)) return project;
+  const hasWidgetDeletions = Object.keys(widgetDeletions).length > 0;
+  const hasStyleOverrides = Object.keys(styleOverrides).length > 0;
+  const hasStyleDeletions = Object.keys(styleDeletions).length > 0;
+  const nothing =
+    !hasWidgetOverrides &&
+    !hasVarOverrides &&
+    !hasWidgetDeletions &&
+    !hasStyleOverrides &&
+    !hasStyleDeletions;
+  if (!project.pages.length && nothing) return project;
+  if (nothing) return project;
 
-  // Combine: start with widget overrides, then add var overrides expanded to
-  // each consumer (widget-specific edits win on conflict — more local).
-  const combined: Record<WidgetId, Record<string, unknown>> = {};
-  for (const [id, patch] of Object.entries(widgetOverrides)) {
-    combined[id] = { ...patch };
-  }
+  // --- Widgets: combine widgetOverrides + var-expansion + deletions.
+  const widgetCombined: Record<WidgetId, Record<string, unknown>> = {};
+  for (const [id, patch] of Object.entries(widgetOverrides)) widgetCombined[id] = { ...patch };
+
+  // --- Styles: combine styleOverrides + var-expansion.
+  const styleCombined: Record<string, Record<string, unknown>> = {};
+  for (const [id, patch] of Object.entries(styleOverrides)) styleCombined[id] = { ...patch };
+
   if (hasVarOverrides && project.substitutions) {
     for (const [varName, newValue] of Object.entries(varOverrides)) {
       const entry = project.substitutions[varName];
       if (!entry) continue;
       for (const usage of entry.usages) {
-        const forWidget = (combined[usage.widgetId] ||= {});
-        if (!(usage.propKey in forWidget)) {
-          forWidget[usage.propKey] = newValue;
+        if (usage.kind === 'widget') {
+          const forWidget = (widgetCombined[usage.widgetId] ||= {});
+          if (!(usage.propKey in forWidget)) forWidget[usage.propKey] = newValue;
+        } else {
+          const forStyle = (styleCombined[usage.styleId] ||= {});
+          if (!(usage.propKey in forStyle)) forStyle[usage.propKey] = newValue;
         }
       }
     }
   }
 
-  return { ...project, pages: project.pages.map((p) => overridePage(p, combined, widgetDeletions)) };
+  const nextStyles = applyStylePatches(project.styles, styleCombined, styleDeletions);
+  const nextPages = project.pages.map((p) => overridePage(p, widgetCombined, widgetDeletions));
+  return { ...project, pages: nextPages, styles: nextStyles };
 }
+
+function applyStylePatches(
+  styles: EsphomeProject['styles'],
+  overrides: Record<string, Record<string, unknown>>,
+  deletions: Record<string, string[]>,
+): EsphomeProject['styles'] {
+  const hasOv = Object.keys(overrides).length > 0;
+  const hasDel = Object.keys(deletions).length > 0;
+  if (!hasOv && !hasDel) return styles;
+  const out: EsphomeProject['styles'] = {};
+  for (const [id, spec] of Object.entries(styles)) {
+    const ov = overrides[id];
+    const del = deletions[id];
+    if (!ov && (!del || del.length === 0)) {
+      out[id] = spec;
+      continue;
+    }
+    const nextProps: Record<string, unknown> = { ...spec.props, ...(ov ?? {}) };
+    if (del) for (const k of del) delete nextProps[k];
+    out[id] = { ...spec, props: nextProps };
+  }
+  // Preserve styles not present in the original record (shouldn't happen, but safe).
+  for (const id of Object.keys(overrides)) if (!(id in out)) out[id] = styles[id];
+  return out;
+}
+
 
 function overridePage(
   page: LvglPage,

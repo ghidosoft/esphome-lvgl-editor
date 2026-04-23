@@ -14,7 +14,9 @@ export interface EsphomeProject {
   errors: ParseError[];
   /** Source-map layer for round-trip editing. Undefined when loader doesn't build it. */
   sources?: Record<WidgetId, WidgetPropSources>;
-  /** Substitution definitions + the widgets that consume each var. */
+  /** Per-style source map — where each style's props were defined. */
+  styleSources?: Record<string, StylePropSources>;
+  /** Substitution definitions + the widgets/styles that consume each var. */
   substitutions?: Record<string, SubstitutionEntry>;
   /** Absolute file paths loaded by this project (for save whitelisting). */
   files?: string[];
@@ -137,10 +139,22 @@ export interface WidgetPropSources {
   layout?: Record<string, PropSource>;
 }
 
-export interface SubstitutionUsage {
-  widgetId: WidgetId;
-  propKey: string;
+/** Where a `style_definitions:` entry lives in the source. `yamlPath` points
+ * at the mapping of that style (the `{ id: ..., props... }` object). */
+export interface StyleSource {
+  file: string;
+  yamlPath: YamlPath;
 }
+
+export interface StylePropSources {
+  self: StyleSource;
+  props: Record<string, PropSource>;
+}
+
+/** A substitution can be consumed by either a widget prop or a style prop. */
+export type SubstitutionUsage =
+  | { kind: 'widget'; widgetId: WidgetId; propKey: string }
+  | { kind: 'style'; styleId: string; propKey: string };
 
 export interface SubstitutionEntry {
   value: string;

@@ -11,21 +11,29 @@ import type { OpaqueTag } from './types';
  * round-trip with comments and formatting preserved (goal of the round-trip
  * save feature).
  */
+/**
+ * Register `!include`, `!secret`, `!lambda` as known tags so the parser
+ * doesn't warn on them. We intentionally don't set `identify` or `stringify`
+ * — the default string serializer preserves block literals (`|-`, `|+`),
+ * plain/quoted style, and the tag itself, which is what round-trip editing
+ * needs. Providing a custom `stringify` here forced every tagged scalar
+ * inline and destroyed `!lambda |-` multi-line bodies.
+ */
 const ESPHOME_TAGS: Array<ScalarTag | CollectionTag> = (['!include', '!secret', '!lambda'] as const).map(
   (tag): ScalarTag => ({
     tag,
     resolve: (value: string) => value,
-    identify: (v: unknown) => typeof v === 'object' && v !== null && (v as { __tag?: string }).__tag === tag,
-    stringify: ({ value }) => String(value),
   }),
 );
 
 export function parseDocument(source: string): Document.Parsed {
   return yamlParseDocument(source, {
     customTags: ESPHOME_TAGS,
-    // Keep source-token info for round-tripping.
-    keepSourceTokens: false,
-    // Resolve aliases explicitly so duplicate anchors don't conflate origins.
+    // Preserve source tokens on every node so nodes that weren't touched by an
+    // edit round-trip byte-for-byte on `toString()`; without this, any `setIn`
+    // triggers a full re-stringify of the Document and invents cosmetic
+    // differences far from the edit site.
+    keepSourceTokens: true,
     merge: false,
   });
 }

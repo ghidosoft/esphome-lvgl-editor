@@ -16,6 +16,7 @@ the tool gets used.
 - [ ] **Multi-line label**: word-wrap when `long_mode: WRAP` / `BREAK`.
 - [ ] **DPR scaling**: crisp canvas on retina displays (currently 1:1).
 - [ ] **PUA glyph rendering in property controls**: Material Symbols codepoints (U+E000–U+F8FF) show as tofu in text inputs. Show the codepoint (e.g. ``) alongside or instead of the glyph, and accept that form in the input.
+- [ ] **Cosmetic save diffs from eemeli re-stringify**: even with `flowCollectionPadding:false` + `lineWidth:0`, a single edit can touch a handful of unrelated lines (hex case normalized `0xFF`→`0xff`, orphan comments re-indented between top-level blocks). Semantically identical, ESPHome-safe, but ugly in git diffs. Real fix would require CST-level patching instead of `doc.setIn` + `doc.toString()`.
 - [ ] **Error overlay**: when the parser hits `ProjectLoadError`, show file path + message in a banner instead of an empty canvas.
 - [ ] **Sidebar filtering**: exclude files that aren't actual ESPHome projects (e.g. `merged/*.yaml` — only top-level entries are excluded today).
 
@@ -46,7 +47,7 @@ the tool gets used.
   - [ ] **P3** — editable MVP props (text, colors, geometry, padding) for literals, with `/__lvgl/edit` + `/__lvgl/commit` server endpoints and dirty-file save flow.
   - [ ] **P4** — var-aware write-back (edit propagates to the substitution definition with a "used by N widgets" confirmation), Variables panel editing, multi-file conflict detection.
 - [ ] **Drag & drop**: reposition widgets, move them across containers, create new ones from a palette. Needs precise hit-testing (the reason we picked Canvas 2D over WASM).
-- [ ] **Global style editor**: separate tab for `style_definitions`, edit `color_accent_*` via a color picker → updates `theme.yaml`.
+- [x] **Global style editor**: Styles tab with schema-driven controls + add/remove/var-backed write-back.
 - [ ] **Sensor simulator**: sliders to fake temperature/humidity/etc. without HA — useful for mockups.
 - [ ] **Public packaging**: ship as a CLI `npx esphome-lvgl-preview <path>` so it can be used against any ESPHome project, not just this repo.
 - [ ] **Monorepo consolidation**: if it goes public, fold `scripts/merge-lvgl.mjs` into the same package and have it use `lvgl-editor/src/parser` (share the logic instead of duplicating it).
