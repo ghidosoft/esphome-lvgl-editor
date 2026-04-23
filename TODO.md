@@ -16,6 +16,7 @@ the tool gets used.
 - [ ] **Cosmetic save diffs from eemeli re-stringify**: even with `flowCollectionPadding:false` + `lineWidth:0`, a single edit can touch a handful of unrelated lines (hex case normalized `0xFF`→`0xff`, orphan comments re-indented between top-level blocks). Semantically identical, ESPHome-safe, but ugly in git diffs. Real fix would require CST-level patching instead of `doc.setIn` + `doc.toString()`.
 - [ ] **Error overlay**: when the parser hits `ProjectLoadError`, show file path + message in a banner instead of an empty canvas.
 - [ ] **Sidebar filtering**: exclude files that aren't actual ESPHome projects (e.g. `merged/*.yaml` — only top-level entries are excluded today).
+- [ ] **`clip_corner` in overflow clip**: children are currently clipped to the parent's rectangular `drawn` box; honor rounded-corner clipping when the parent has `radius` + `clip_corner` (LVGL's flag for clipping children along the border-radius).
 
 ## Medium-term (open features)
 
