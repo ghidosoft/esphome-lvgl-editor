@@ -17,6 +17,7 @@ the tool gets used.
 - [ ] **Error overlay**: when the parser hits `ProjectLoadError`, show file path + message in a banner instead of an empty canvas.
 - [ ] **Sidebar filtering**: exclude files that aren't actual ESPHome projects (e.g. `merged/*.yaml` — only top-level entries are excluded today).
 - [ ] **`clip_corner` in overflow clip**: children are currently clipped to the parent's rectangular `drawn` box; honor rounded-corner clipping when the parent has `radius` + `clip_corner` (LVGL's flag for clipping children along the border-radius).
+- [ ] **Scroll indication on overflow**: when children exceed the parent's content area, LVGL shows a scrollbar by default (unless `scrollbar_mode: off`). We currently just clip the overflow silently — surface it (scrollbar rendering, or at least a visual overflow hint) so the editor flags the same layout issues the device does.
 
 ## Medium-term (open features)
 
