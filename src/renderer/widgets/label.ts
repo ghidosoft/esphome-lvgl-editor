@@ -35,17 +35,27 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
     hAlign === 'right' ? box.x + box.width :
     hAlign === 'center' ? box.x + box.width / 2 :
     box.x;
-  const fontSize = parseFontSize(font);
+  // Two different heights at play:
+  //  - lineHeight (ascent+descent): matches LVGL's `font.line_height`, used for
+  //    SIZE_CONTENT and the returned hit-test rect.
+  //  - emSize (CSS px): the em box where Canvas's vector web-font actually
+  //    renders the glyph. For icon fonts LVGL's bitmap glyph fills the full
+  //    line-box, but our Canvas glyph fills only the em box — so we position
+  //    the text by em to keep the ink visually centered like the device, even
+  //    though the widget's logical height is lineHeight.
+  const lineHeight = fontHeight(c);
+  const emSize = parseEmSize(font);
   const yPos =
-    vAlign === 'bottom' ? box.y + box.height - fontSize :
-    vAlign === 'middle' ? box.y + (box.height - fontSize) / 2 :
+    vAlign === 'bottom' ? box.y + box.height - emSize :
+    vAlign === 'middle' ? box.y + (box.height - emSize) / 2 :
     box.y;
 
   c.fillText(text, xPos, yPos);
 
   // Return the measured content rectangle instead of the (often oversized)
   // parent-sized box — the CanvasStage uses this for hit-testing, and we want
-  // clicks on a label to select the label, not the whole card.
+  // clicks on a label to select the label, not the whole card. Height is the
+  // line-box (what LVGL treats as the widget's height).
   const measuredWidth = c.measureText(text).width;
   c.restore();
 
@@ -53,7 +63,11 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
     hAlign === 'right' ? xPos - measuredWidth :
     hAlign === 'center' ? xPos - measuredWidth / 2 :
     xPos;
-  return { x: contentX, y: yPos, width: measuredWidth, height: fontSize };
+  const drawnY =
+    vAlign === 'bottom' ? box.y + box.height - lineHeight :
+    vAlign === 'middle' ? box.y + (box.height - lineHeight) / 2 :
+    box.y;
+  return { x: contentX, y: drawnY, width: measuredWidth, height: lineHeight };
 }
 
 function decomposeAlign(align: string): { hAlign: 'left' | 'center' | 'right'; vAlign: 'top' | 'middle' | 'bottom' } {
@@ -71,7 +85,25 @@ function decomposeAlign(align: string): { hAlign: 'left' | 'center' | 'right'; v
   }
 }
 
-function parseFontSize(font: string): number {
+/**
+ * Font line-height (ascent + descent), matching LVGL's `font.line_height`.
+ * The CSS font's nominal `px` size is the em box; real fonts — especially
+ * icon fonts like Material Symbols — report an ascent+descent noticeably
+ * larger than the em (≈1.2× for Material Symbols). LVGL uses line_height to
+ * decide overflow/scroll, so we must too.
+ *
+ * Caller must set `c.font` before calling.
+ */
+function fontHeight(c: CanvasRenderingContext2D): number {
+  const m = c.measureText('M');
+  const a = m.fontBoundingBoxAscent;
+  const d = m.fontBoundingBoxDescent;
+  if (typeof a === 'number' && typeof d === 'number') return a + d;
+  return 14;
+}
+
+/** CSS em size (the `<n>px` token from the resolved font string). */
+function parseEmSize(font: string): number {
   const m = /(\d+)px/.exec(font);
   return m ? parseInt(m[1], 10) : 14;
 }
@@ -89,6 +121,7 @@ export function measureLabel(w: LvglWidget, ctx: RenderContext): { width: number
   c.save();
   c.font = font;
   const width = c.measureText(text).width;
+  const height = fontHeight(c);
   c.restore();
-  return { width, height: parseFontSize(font) };
+  return { width, height };
 }

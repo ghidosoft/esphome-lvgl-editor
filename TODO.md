@@ -18,6 +18,7 @@ the tool gets used.
 - [ ] **Sidebar filtering**: exclude files that aren't actual ESPHome projects (e.g. `merged/*.yaml` — only top-level entries are excluded today).
 - [ ] **`clip_corner` in overflow clip**: children are currently clipped to the parent's rectangular `drawn` box; honor rounded-corner clipping when the parent has `radius` + `clip_corner` (LVGL's flag for clipping children along the border-radius).
 - [ ] **Scroll indication on overflow**: when children exceed the parent's content area, LVGL shows a scrollbar by default (unless `scrollbar_mode: off`). We currently just clip the overflow silently — surface it (scrollbar rendering, or at least a visual overflow hint) so the editor flags the same layout issues the device does.
+- [ ] **Unexplained ~2 px inset on flex containers**: on `irrigation_page` the STOP button fit at `width: 96` on-device while our math (container 452, children 105+105+120+100 + 3×8 gap = 454) said it should fit at `width: 98`. A 2 px delta is unaccounted — candidates: default `pad_left`/`pad_right` on plain `obj`, scrollbar gutter reservation even with `scrollbar_mode: off`, or a rounding/sub-pixel effect in LVGL's flex. Worth instrumenting once we have a side-by-side device capture.
 
 ## Medium-term (open features)
 
