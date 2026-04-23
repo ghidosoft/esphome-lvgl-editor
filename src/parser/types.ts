@@ -12,6 +12,12 @@ export interface EsphomeProject {
   styles: Record<string, StyleSpec>;
   pages: LvglPage[];
   errors: ParseError[];
+  /** Source-map layer for round-trip editing. Undefined when loader doesn't build it. */
+  sources?: Record<WidgetId, WidgetPropSources>;
+  /** Substitution definitions + the widgets that consume each var. */
+  substitutions?: Record<string, SubstitutionEntry>;
+  /** Absolute file paths loaded by this project (for save whitelisting). */
+  files?: string[];
 }
 
 export interface FontSpec {
@@ -91,4 +97,49 @@ export function isOpaqueTag(v: unknown): v is OpaqueTag {
     typeof (v as { __tag: unknown }).__tag === 'string' &&
     (v as { __tag: string }).__tag.startsWith('!')
   );
+}
+
+/** Stable identifier for a widget within a project. Either `id:<yamlId>` when
+ * the widget declares `id:`, or a structural path `<pageId>/<index>[/<index>]*`. */
+export type WidgetId = string;
+
+/** Path into a single file's CST (not the resolved tree). Keys or array indices. */
+export type YamlPath = (string | number)[];
+
+/** Where a widget's mapping lives in the source files. */
+export interface WidgetSource {
+  file: string;
+  yamlPath: YamlPath;
+  /** Set when the widget came from a `packages:` entry. */
+  packageName?: string;
+}
+
+/** Where a single property value lives. If `viaVariable` is set, the file/path
+ * point to the substitution's definition (not the widget itself). */
+export interface PropSource {
+  file: string;
+  yamlPath: YamlPath;
+  /** Set when the original scalar was exactly `${var}`. */
+  viaVariable?: string;
+  /** Set when the scalar is a mixed template like `"prefix-${var}"`. */
+  template?: boolean;
+}
+
+export interface WidgetPropSources {
+  self: WidgetSource;
+  props: Record<string, PropSource>;
+  styles?: PropSource;
+  layout?: Record<string, PropSource>;
+}
+
+export interface SubstitutionUsage {
+  widgetId: WidgetId;
+  propKey: string;
+}
+
+export interface SubstitutionEntry {
+  value: string;
+  file: string;
+  yamlPath: YamlPath;
+  usages: SubstitutionUsage[];
 }

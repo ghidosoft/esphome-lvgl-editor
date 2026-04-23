@@ -2,6 +2,7 @@ import type { Plugin, ViteDevServer } from 'vite';
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import { loadProject } from '../parser/loader';
+import { FileRegistry } from '../parser/fileRegistry';
 import type { EsphomeProject } from '../parser/types';
 import { listProjects } from './projectScanner';
 
@@ -10,8 +11,14 @@ export interface LvglPluginOptions {
   esphomeDir: string;
 }
 
+interface CacheEntry {
+  project: EsphomeProject;
+  /** CST registry for round-trip editing. Not serialized to the client. */
+  registry: FileRegistry;
+}
+
 export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
-  const cache = new Map<string, EsphomeProject>();
+  const cache = new Map<string, CacheEntry>();
 
   return {
     name: 'lvgl-editor',
@@ -62,13 +69,15 @@ export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
           return;
         }
         try {
-          let project = cache.get(path);
-          if (!project) {
-            project = loadProject(path);
-            cache.set(path, project);
+          let entry = cache.get(path);
+          if (!entry) {
+            const registry = new FileRegistry();
+            const project = loadProject(path, registry);
+            entry = { project, registry };
+            cache.set(path, entry);
           }
           res.setHeader('content-type', 'application/json');
-          res.end(JSON.stringify(project));
+          res.end(JSON.stringify(entry.project));
         } catch (e) {
           res.statusCode = 500;
           res.setHeader('content-type', 'application/json');
