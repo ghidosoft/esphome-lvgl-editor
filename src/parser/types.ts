@@ -112,6 +112,9 @@ export type YamlPath = (string | number)[];
 export interface WidgetSource {
   file: string;
   yamlPath: YamlPath;
+  /** ESPHome widget type (e.g. "label", "obj"). Needed to route new-key writes
+   * to `<yamlPath>/<widgetType>/<newKey>`. */
+  widgetType: string;
   /** Set when the widget came from a `packages:` entry. */
   packageName?: string;
 }

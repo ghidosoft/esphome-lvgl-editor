@@ -2,13 +2,16 @@ import type { EsphomeProject, WidgetId } from '../parser/types';
 
 /**
  * Wire format for server-side edits. The server looks up the corresponding
- * `yaml.Document` in the FileRegistry and calls `doc.setIn(yamlPath, newValue)`
- * to mutate the CST in place.
+ * `yaml.Document` in the FileRegistry and calls either `doc.setIn` or
+ * `doc.deleteIn` depending on `op`.
  */
 export interface EditOp {
   file: string;
   yamlPath: (string | number)[];
-  newValue: string | number | boolean | null;
+  /** `set` writes `newValue` at `yamlPath`; `delete` removes the key. */
+  op: 'set' | 'delete';
+  /** Present when op === 'set'. */
+  newValue?: string | number | boolean | null;
 }
 
 export interface EditBuildResult {
@@ -18,20 +21,25 @@ export interface EditBuildResult {
 }
 
 /**
- * Translate pending overrides into an ordered list of server edit ops.
+ * Translate pending overrides and deletions into an ordered list of server
+ * edit ops.
  *
  * Sources of ops:
- *   - Widget overrides on literal props → write to the widget's own file.
+ *   - Widget overrides on literal props → `set` at the prop's yamlPath.
+ *   - Widget overrides on props not yet in the source → `set` at
+ *     `<widgetSelf>/<widgetType>/<propKey>` (adds a new key).
+ *   - Widget deletions → `delete` at the prop's yamlPath.
  *   - Var overrides (from VariablesPanel or implicitly from editing a
- *     var-backed prop) → write to the substitution's definition file.
+ *     var-backed prop) → `set` at the substitution's definition file.
  *
- * Template props, props with no source-map entry, and new props (not yet in
- * YAML) are surfaced as `skipped` with a reason so the UI can explain.
+ * Template props and var-backed writes via widget overrides are surfaced as
+ * `skipped` with a reason so the UI can explain.
  */
 export function buildEditOps(
   project: EsphomeProject,
   widgetOverrides: Record<WidgetId, Record<string, unknown>>,
   varOverrides: Record<string, string>,
+  widgetDeletions: Record<WidgetId, string[]> = {},
 ): EditBuildResult {
   const ops: EditOp[] = [];
   const skipped: EditBuildResult['skipped'] = [];
@@ -47,7 +55,13 @@ export function buildEditOps(
     for (const [propKey, value] of Object.entries(patch)) {
       const propSource = sources.props[propKey];
       if (!propSource) {
-        skipped.push({ widgetId, propKey, reason: 'property not in source file (adding new keys is P5)' });
+        // Prop not yet in source — add it under the widget's mapping.
+        ops.push({
+          op: 'set',
+          file: sources.self.file,
+          yamlPath: [...sources.self.yamlPath, sources.self.widgetType, propKey],
+          newValue: coerceScalar(value),
+        });
         continue;
       }
       if (propSource.template) {
@@ -55,9 +69,6 @@ export function buildEditOps(
         continue;
       }
       if (propSource.viaVariable) {
-        // Defensive: store normally routes these to varOverrides, but if a
-        // widget override sneaks in for a var-backed prop we still prefer the
-        // variable write-back for consistency.
         skipped.push({
           widgetId,
           propKey,
@@ -66,10 +77,31 @@ export function buildEditOps(
         continue;
       }
       ops.push({
+        op: 'set',
         file: propSource.file,
         yamlPath: propSource.yamlPath,
         newValue: coerceScalar(value),
       });
+    }
+  }
+
+  for (const [widgetId, keys] of Object.entries(widgetDeletions)) {
+    const sources = project.sources?.[widgetId];
+    if (!sources) {
+      for (const key of keys) skipped.push({ widgetId, propKey: key, reason: 'no source map entry' });
+      continue;
+    }
+    for (const key of keys) {
+      const propSource = sources.props[key];
+      if (!propSource) {
+        // Already absent from the source — nothing to delete on disk.
+        continue;
+      }
+      if (propSource.viaVariable) {
+        skipped.push({ widgetId, propKey: key, reason: 'cannot remove a var-backed prop (P5 detach)' });
+        continue;
+      }
+      ops.push({ op: 'delete', file: propSource.file, yamlPath: propSource.yamlPath });
     }
   }
 
@@ -80,6 +112,7 @@ export function buildEditOps(
       continue;
     }
     ops.push({
+      op: 'set',
       file: entry.file,
       yamlPath: entry.yamlPath,
       newValue: coerceScalar(newValue),

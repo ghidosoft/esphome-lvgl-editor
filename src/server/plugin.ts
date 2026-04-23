@@ -20,7 +20,8 @@ interface CacheEntry {
 interface EditOp {
   file: string;
   yamlPath: (string | number)[];
-  newValue: string | number | boolean | null;
+  op: 'set' | 'delete';
+  newValue?: string | number | boolean | null;
 }
 
 export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
@@ -104,10 +105,15 @@ export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
               return sendJson(res, 400, { error: 'yamlPath must be a non-empty array' });
             }
             const fileEntry = entry.registry.get(abs)!;
+            const opKind: 'set' | 'delete' = op.op === 'delete' ? 'delete' : 'set';
             try {
-              fileEntry.doc.setIn(op.yamlPath as (string | number)[], op.newValue);
+              if (opKind === 'delete') {
+                fileEntry.doc.deleteIn(op.yamlPath as (string | number)[]);
+              } else {
+                fileEntry.doc.setIn(op.yamlPath as (string | number)[], op.newValue);
+              }
             } catch (e) {
-              return sendJson(res, 500, { error: `setIn failed for ${abs}: ${(e as Error).message}` });
+              return sendJson(res, 500, { error: `${opKind} failed for ${abs}: ${(e as Error).message}` });
             }
             entry.registry.markDirty(abs);
             appliedFiles.add(abs);

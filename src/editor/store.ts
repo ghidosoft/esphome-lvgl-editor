@@ -23,6 +23,8 @@ export interface EditorState {
   activeTab: 'properties' | 'variables';
   widgetOverrides: Record<WidgetId, Record<string, unknown>>;
   varOverrides: Record<string, string>;
+  /** Per-widget set of prop keys pending removal from the YAML source. */
+  widgetDeletions: Record<WidgetId, string[]>;
   saving: boolean;
   saveError: string | null;
 
@@ -32,9 +34,12 @@ export interface EditorState {
   /**
    * Update a widget property. Dispatches to `varOverrides` when the prop was
    * bound to `${var}` in the source — editing the var is what the user
-   * actually wants in that case.
+   * actually wants in that case. Passing `undefined` reverts any pending edit
+   * (override or deletion) and leaves the source value intact.
    */
   updateProp: (project: EsphomeProject, id: WidgetId, key: string, value: unknown) => void;
+  /** Mark a prop for removal from the YAML source on save. Clears any pending override on the same key. */
+  deleteProp: (id: WidgetId, key: string) => void;
   /** Update a substitution's value directly (used by VariablesPanel). */
   updateVar: (name: string, value: string | undefined) => void;
   clearOverrides: () => void;
@@ -48,6 +53,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   activeTab: 'properties',
   widgetOverrides: {},
   varOverrides: {},
+  widgetDeletions: {},
   saving: false,
   saveError: null,
 
@@ -66,13 +72,32 @@ export const useEditorStore = create<EditorState>((set) => ({
         else nextVars[varName] = String(value);
         return { varOverrides: nextVars };
       }
-      const next = { ...s.widgetOverrides };
-      const forWidget = { ...(next[id] ?? {}) };
+      const nextOv = { ...s.widgetOverrides };
+      const forWidget = { ...(nextOv[id] ?? {}) };
       if (value === undefined) delete forWidget[key];
       else forWidget[key] = value;
-      if (Object.keys(forWidget).length === 0) delete next[id];
-      else next[id] = forWidget;
-      return { widgetOverrides: next };
+      if (Object.keys(forWidget).length === 0) delete nextOv[id];
+      else nextOv[id] = forWidget;
+      // Revert/update cancels a pending deletion on the same key.
+      const nextDel = { ...s.widgetDeletions };
+      const keys = (nextDel[id] ?? []).filter((k) => k !== key);
+      if (keys.length === 0) delete nextDel[id];
+      else nextDel[id] = keys;
+      return { widgetOverrides: nextOv, widgetDeletions: nextDel };
+    }),
+  deleteProp: (id, key) =>
+    set((s) => {
+      const nextDel = { ...s.widgetDeletions };
+      const existing = nextDel[id] ?? [];
+      if (!existing.includes(key)) nextDel[id] = [...existing, key];
+      // Drop any pending override for this key — deletion wins.
+      const nextOv = { ...s.widgetOverrides };
+      if (nextOv[id]) {
+        const { [key]: _drop, ...rest } = nextOv[id];
+        if (Object.keys(rest).length === 0) delete nextOv[id];
+        else nextOv[id] = rest;
+      }
+      return { widgetDeletions: nextDel, widgetOverrides: nextOv };
     }),
   updateVar: (name, value) =>
     set((s) => {
@@ -81,7 +106,7 @@ export const useEditorStore = create<EditorState>((set) => ({
       else nextVars[name] = value;
       return { varOverrides: nextVars };
     }),
-  clearOverrides: () => set({ widgetOverrides: {}, varOverrides: {} }),
+  clearOverrides: () => set({ widgetOverrides: {}, varOverrides: {}, widgetDeletions: {} }),
   setSaving: (v) => set({ saving: v }),
   setSaveError: (e) => set({ saveError: e }),
 }));
@@ -112,10 +137,12 @@ export function applyOverrides(
   project: EsphomeProject,
   widgetOverrides: Record<WidgetId, Record<string, unknown>>,
   varOverrides: Record<string, string>,
+  widgetDeletions: Record<WidgetId, string[]> = {},
 ): EsphomeProject {
   const hasWidgetOverrides = Object.keys(widgetOverrides).length > 0;
   const hasVarOverrides = Object.keys(varOverrides).length > 0;
-  if (!project.pages.length || (!hasWidgetOverrides && !hasVarOverrides)) return project;
+  const hasDeletions = Object.keys(widgetDeletions).length > 0;
+  if (!project.pages.length || (!hasWidgetOverrides && !hasVarOverrides && !hasDeletions)) return project;
 
   // Combine: start with widget overrides, then add var overrides expanded to
   // each consumer (widget-specific edits win on conflict — more local).
@@ -136,22 +163,32 @@ export function applyOverrides(
     }
   }
 
-  return { ...project, pages: project.pages.map((p) => overridePage(p, combined)) };
+  return { ...project, pages: project.pages.map((p) => overridePage(p, combined, widgetDeletions)) };
 }
 
-function overridePage(page: LvglPage, overrides: Record<WidgetId, Record<string, unknown>>): LvglPage {
-  return { ...page, widgets: page.widgets.map((w) => overrideWidget(w, overrides)) };
+function overridePage(
+  page: LvglPage,
+  overrides: Record<WidgetId, Record<string, unknown>>,
+  deletions: Record<WidgetId, string[]>,
+): LvglPage {
+  return { ...page, widgets: page.widgets.map((w) => overrideWidget(w, overrides, deletions)) };
 }
 
-function overrideWidget(widget: LvglWidget, overrides: Record<WidgetId, Record<string, unknown>>): LvglWidget {
+function overrideWidget(
+  widget: LvglWidget,
+  overrides: Record<WidgetId, Record<string, unknown>>,
+  deletions: Record<WidgetId, string[]>,
+): LvglWidget {
   const patch = widget.widgetId ? overrides[widget.widgetId] : undefined;
+  const del = widget.widgetId ? deletions[widget.widgetId] : undefined;
   const nextChildren = widget.children.length > 0
-    ? widget.children.map((c) => overrideWidget(c, overrides))
+    ? widget.children.map((c) => overrideWidget(c, overrides, deletions))
     : widget.children;
-  if (!patch && nextChildren === widget.children) return widget;
-  return {
-    ...widget,
-    props: patch ? { ...widget.props, ...patch } : widget.props,
-    children: nextChildren,
-  };
+  if (!patch && (!del || del.length === 0) && nextChildren === widget.children) return widget;
+  let nextProps = widget.props;
+  if (patch || (del && del.length > 0)) {
+    nextProps = { ...widget.props, ...(patch ?? {}) };
+    if (del) for (const key of del) delete nextProps[key];
+  }
+  return { ...widget, props: nextProps, children: nextChildren };
 }

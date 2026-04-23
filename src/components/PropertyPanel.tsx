@@ -9,16 +9,24 @@ interface Props {
 }
 
 /**
- * Property editor for the selected widget. Schema-covered props render as
- * editable controls; unknown props appear as read-only raw rows. Var-backed
- * and mixed-template props are shown but disabled in P3 (P4 will wire them
- * to the substitution definition).
+ * Property editor for the selected widget. Renders every entry from the
+ * widget's schema — including ones not yet defined in YAML — so the user can
+ * both tweak existing props and add new ones. Schema-covered props use typed
+ * controls; unknown props fall through as read-only raw rows. Var-backed
+ * props are editable (changes flow to the substitution); templates stay
+ * read-only.
+ *
+ * Each editable row has a revert button (↺) when dirty, and a remove button
+ * (×) when the prop is currently defined in the source — removing drops the
+ * key from YAML on save, reverting the widget to the LVGL default.
  */
 export function PropertyPanel({ project }: Props) {
   const selectedWidgetId = useEditorStore((s) => s.selectedWidgetId);
   const widgetOverridesMap = useEditorStore((s) => s.widgetOverrides);
   const varOverrides = useEditorStore((s) => s.varOverrides);
+  const widgetDeletionsMap = useEditorStore((s) => s.widgetDeletions);
   const updateProp = useEditorStore((s) => s.updateProp);
+  const deleteProp = useEditorStore((s) => s.deleteProp);
 
   if (!selectedWidgetId) {
     return <div className="panel__hint">Click a widget on the canvas to inspect it.</div>;
@@ -31,15 +39,11 @@ export function PropertyPanel({ project }: Props) {
 
   const schema = getSchema(widget.type);
   const widgetOverrides = widgetOverridesMap[selectedWidgetId] ?? {};
+  const pendingDeletions = widgetDeletionsMap[selectedWidgetId] ?? [];
 
-  // Props covered by the schema render with controls, in schema order. Only
-  // show rows for props that are either present on the widget (in source or
-  // via override) OR have a PropSource (defined in YAML somewhere upstream).
-  const schemaRows = schema.filter(
-    (entry) =>
-      entry.key in widget.props || entry.key in widgetOverrides || !!sources.props[entry.key],
-  );
-  // Remaining props fall through as read-only raw rows.
+  // Props outside the schema that are present on the widget — render
+  // read-only so nothing gets hidden. (Editing the full surface is a P5
+  // schema-expansion concern.)
   const schemaKeys = new Set(schema.map((e) => e.key));
   const extraRows = Object.keys(widget.props).filter((k) => !schemaKeys.has(k));
 
@@ -60,20 +64,25 @@ export function PropertyPanel({ project }: Props) {
           />
         )}
 
-        {schemaRows.map((entry) => {
+        {schema.map((entry) => {
           const source = sources.props[entry.key];
           const varName = source?.viaVariable;
-          // Resolve the effective value: varOverride wins for var-backed props,
-          // else widgetOverride, else the current widget prop.
           const varOverride = varName ? varOverrides[varName] : undefined;
           const hasVarOverride = varName != null && varName in varOverrides;
           const hasWidgetOverride = entry.key in widgetOverrides;
-          const hasOverride = hasVarOverride || hasWidgetOverride;
+          const pendingDelete = pendingDeletions.includes(entry.key);
+          const hasOverride = hasVarOverride || hasWidgetOverride || pendingDelete;
+          const existsInSource = source != null;
+          const existsNow = entry.key in widget.props;
+
+          // Effective displayed value: varOverride → widgetOverride → source.
+          // When pending-delete, show the control with source value but dimmed.
           const effective = hasVarOverride
             ? varOverride
             : hasWidgetOverride
               ? widgetOverrides[entry.key]
               : widget.props[entry.key];
+
           return (
             <EditableRow
               key={entry.key}
@@ -82,8 +91,12 @@ export function PropertyPanel({ project }: Props) {
               project={project}
               value={effective}
               hasOverride={hasOverride}
+              pendingDelete={pendingDelete}
+              existsInSource={existsInSource}
+              existsNow={existsNow}
               onChange={(v) => updateProp(project, selectedWidgetId, entry.key, v)}
               onRevert={() => updateProp(project, selectedWidgetId, entry.key, undefined)}
+              onDelete={() => deleteProp(selectedWidgetId, entry.key)}
             />
           );
         })}
@@ -97,10 +110,6 @@ export function PropertyPanel({ project }: Props) {
             source={sources.props[key]}
           />
         ))}
-
-        {schemaRows.length === 0 && extraRows.length === 0 && widget.styles.length === 0 && (
-          <div className="panel__hint">No properties on this widget.</div>
-        )}
       </div>
     </div>
   );
@@ -112,37 +121,72 @@ function EditableRow({
   project,
   value,
   hasOverride,
+  pendingDelete,
+  existsInSource,
+  existsNow,
   onChange,
   onRevert,
+  onDelete,
 }: {
   entry: SchemaEntry;
   source?: PropSource;
   project: EsphomeProject;
   value: unknown;
   hasOverride: boolean;
+  pendingDelete: boolean;
+  existsInSource: boolean;
+  existsNow: boolean;
   onChange: (v: unknown) => void;
   onRevert: () => void;
+  onDelete: () => void;
 }) {
-  // Templates stay read-only for now (partial-string editing is non-trivial).
-  const disabled = !!source?.template;
+  const disabled = !!source?.template || pendingDelete;
   const sub = source?.viaVariable ? project.substitutions?.[source.viaVariable] : undefined;
-  const rowClass = `prop-row ${hasOverride ? 'prop-row--dirty' : ''} ${disabled ? 'prop-row--disabled' : ''}`;
+  const isVarBacked = !!source?.viaVariable;
+  // Offer "remove" only for literal props that actually exist in the source;
+  // var-backed removal would mean detach (P5), and adding+deleting a not-yet-
+  // written prop is just a revert.
+  const canDelete = existsInSource && !isVarBacked && !source?.template;
+
+  const rowClass = [
+    'prop-row',
+    hasOverride ? 'prop-row--dirty' : '',
+    disabled ? 'prop-row--disabled' : '',
+    pendingDelete ? 'prop-row--pending-delete' : '',
+    !existsNow && !hasOverride ? 'prop-row--unset' : '',
+  ].join(' ').trim();
 
   return (
     <div className={rowClass}>
       <div className="prop-row__key">
         {entry.key}
         {hasOverride && <span className="prop-row__dirty-dot" title="unsaved change" />}
+        {!existsNow && !hasOverride && <span className="prop-row__unset-tag">unset</span>}
       </div>
       <div className="prop-row__control">
         <PropControl entry={entry} value={value} onChange={onChange} disabled={disabled} />
         {hasOverride && (
-          <button type="button" className="prop-row__revert" title="Revert to source" onClick={onRevert}>
+          <button type="button" className="prop-row__btn" title="Revert to source" onClick={onRevert}>
             ↺
           </button>
         )}
+        {canDelete && !pendingDelete && (
+          <button
+            type="button"
+            className="prop-row__btn prop-row__btn--danger"
+            title="Remove from YAML (revert to LVGL default)"
+            onClick={onDelete}
+          >
+            ×
+          </button>
+        )}
       </div>
-      {source?.viaVariable && (
+      {pendingDelete && (
+        <div className="prop-row__banner prop-row__banner--warn">
+          Pending removal — will be deleted from YAML on save
+        </div>
+      )}
+      {source?.viaVariable && !pendingDelete && (
         <div className="prop-row__banner prop-row__banner--var">
           Bound to <code>${'{'}{source.viaVariable}{'}'}</code>
           {sub && (

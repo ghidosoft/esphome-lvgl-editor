@@ -22,6 +22,7 @@ interface Props {
 export function SaveBar({ project, projectName, onSaved }: Props) {
   const widgetOverrides = useEditorStore((s) => s.widgetOverrides);
   const varOverrides = useEditorStore((s) => s.varOverrides);
+  const widgetDeletions = useEditorStore((s) => s.widgetDeletions);
   const saving = useEditorStore((s) => s.saving);
   const saveError = useEditorStore((s) => s.saveError);
   const setSaving = useEditorStore((s) => s.setSaving);
@@ -29,11 +30,12 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
   const clearOverrides = useEditorStore((s) => s.clearOverrides);
 
   const { ops, skipped } = useMemo(
-    () => buildEditOps(project, widgetOverrides, varOverrides),
-    [project, widgetOverrides, varOverrides],
+    () => buildEditOps(project, widgetOverrides, varOverrides, widgetDeletions),
+    [project, widgetOverrides, varOverrides, widgetDeletions],
   );
 
-  const widgetCount = Object.keys(widgetOverrides).length;
+  const dirtyWidgetIds = new Set([...Object.keys(widgetOverrides), ...Object.keys(widgetDeletions)]);
+  const widgetCount = dirtyWidgetIds.size;
   const varCount = Object.keys(varOverrides).length;
   const hasAnything = widgetCount + varCount > 0;
 

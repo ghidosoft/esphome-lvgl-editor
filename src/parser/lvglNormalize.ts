@@ -251,7 +251,7 @@ function readWidget(
     const layoutNode = bodyOriginMap.layout;
     const layoutSrc = toLayoutPropSources(layoutNode);
     sources[widgetId] = {
-      self: { file: selfOrigin.file, yamlPath: selfOrigin.yamlPath },
+      self: { file: selfOrigin.file, yamlPath: selfOrigin.yamlPath, widgetType: type },
       props: propSources,
       styles: stylesSrc,
       layout: layoutSrc,
