@@ -226,6 +226,33 @@ html, body, #root { height: 100%; margin: 0; }
 }
 .panel-body__rows { display: flex; flex-direction: column; gap: 8px; }
 
+/* ---------- Breadcrumb (page → ancestors → widget) ---------- */
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.breadcrumb__row { display: inline-flex; align-items: center; gap: 2px; }
+.breadcrumb__sep { color: var(--text-muted); opacity: 0.6; padding: 0 1px; }
+.breadcrumb__seg {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 1px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+}
+.breadcrumb__seg:hover:not(:disabled) { background: var(--panel-2); color: var(--text); }
+.breadcrumb__seg--current { color: var(--accent); font-weight: 600; cursor: default; }
+.breadcrumb__seg--page { font-style: italic; cursor: default; }
+.breadcrumb__seg:disabled { cursor: default; }
+
 /* ---------- Property group (nested part selectors) ---------- */
 .prop-group {
   background: var(--panel-2);

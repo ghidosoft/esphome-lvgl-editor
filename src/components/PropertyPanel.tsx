@@ -6,6 +6,7 @@ import { getSchema, isGroup, type SchemaEntry, type SchemaGroup, type SchemaItem
 import { getNested, splitKey } from '../editor/nestedKey';
 import { PropControl } from './PropControl';
 import { StylesField } from './StylesField';
+import { Breadcrumb } from './Breadcrumb';
 
 interface Props {
   project: EsphomeProject;
@@ -90,6 +91,7 @@ export function PropertyPanel({ project }: Props) {
   return (
     <div className="panel-body">
       <header className="panel-body__header">
+        <Breadcrumb project={project} widgetId={selectedWidgetId} />
         <div className="panel-body__type">{widget.type}</div>
         <div className="panel-body__id">{selectedWidgetId}</div>
         {sources.self && <OriginLine label="defined in" file={sources.self.file} />}
