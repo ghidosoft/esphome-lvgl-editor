@@ -20,6 +20,8 @@ export function CanvasView({ project, page }: CanvasViewProps) {
   const stageRef = useRef<CanvasStage | null>(null);
   const setHitList = useEditorStore((s) => s.setHitList);
   const setSelected = useEditorStore((s) => s.setSelected);
+  const activeState = useEditorStore((s) => s.activeState);
+  const selectedWidgetId = useEditorStore((s) => s.selectedWidgetId);
 
   useEffect(() => {
     const stage = new CanvasStage();
@@ -30,8 +32,11 @@ export function CanvasView({ project, page }: CanvasViewProps) {
   }, [setHitList]);
 
   useEffect(() => {
-    stageRef.current?.render(project, page);
-  }, [project, page]);
+    stageRef.current?.render(project, page, {
+      activeState: activeState === 'default' ? undefined : activeState,
+      activeStateWidgetId: selectedWidgetId ?? undefined,
+    });
+  }, [project, page, activeState, selectedWidgetId]);
 
   // Clear selection when the page changes (widget ids aren't guaranteed to
   // exist on the new page).

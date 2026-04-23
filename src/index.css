@@ -226,6 +226,47 @@ html, body, #root { height: 100%; margin: 0; }
 }
 .panel-body__rows { display: flex; flex-direction: column; gap: 8px; }
 
+/* ---------- State toggle strip (Chromium-style :hov pills) ---------- */
+.state-strip {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.state-strip__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--text-muted);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s, background 0.1s;
+}
+.state-strip__pill:hover { color: var(--text); border-color: var(--text-muted); }
+.state-strip__pill--active {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.state-strip__pill--active:hover { color: var(--bg); border-color: var(--accent); }
+.state-strip__pill--empty { opacity: 0.55; }
+.state-strip__pseudo { opacity: 0.5; }
+.state-strip__pill--active .state-strip__pseudo { opacity: 0.75; }
+.state-strip__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-left: 2px;
+}
+.state-strip__pill--active .state-strip__dot { background: var(--bg); }
+
 /* ---------- Breadcrumb (page → ancestors → widget) ---------- */
 .breadcrumb {
   display: flex;

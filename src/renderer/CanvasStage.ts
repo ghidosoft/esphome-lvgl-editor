@@ -1,6 +1,6 @@
 import type { EsphomeProject, LvglPage, LvglWidget, WidgetId } from '../parser/types';
 import { parseColor } from './colors';
-import type { Box, RenderContext } from './context';
+import type { Box, PreviewState, RenderContext } from './context';
 import { buildGrid } from './layout/grid';
 import { layoutFlex } from './layout/flex';
 import { rendererFor } from './widgets';
@@ -25,10 +25,18 @@ export interface HitEntry {
  * `{widgetId, box, depth}` entries) used by the click-to-select layer. It is
  * consumed via `getHitList()` / the `onHitList` callback.
  */
+export interface RenderOptions {
+  /** Forced LVGL state for the preview. Undefined / 'default' means no forcing. */
+  activeState?: PreviewState;
+  /** Which widget the `activeState` applies to. Scoped per Chromium DevTools. */
+  activeStateWidgetId?: WidgetId;
+}
+
 export class CanvasStage {
   private canvas: HTMLCanvasElement | null = null;
   private currentPage: LvglPage | null = null;
   private currentProject: EsphomeProject | null = null;
+  private currentOptions: RenderOptions = {};
   private repaintScheduled = false;
   private hitList: HitEntry[] = [];
   private onHitListCb?: (list: HitEntry[]) => void;
@@ -44,13 +52,15 @@ export class CanvasStage {
     this.canvas = null;
     this.currentPage = null;
     this.currentProject = null;
+    this.currentOptions = {};
     this.hitList = [];
   }
 
-  render(project: EsphomeProject, page: LvglPage): void {
+  render(project: EsphomeProject, page: LvglPage, options: RenderOptions = {}): void {
     if (!this.canvas) return;
     this.currentProject = project;
     this.currentPage = page;
+    this.currentOptions = options;
     this.paint();
   }
 
@@ -91,7 +101,14 @@ export class CanvasStage {
     c.fillStyle = bg;
     c.fillRect(0, 0, width, height);
 
-    const ctx: RenderContext = { ctx: c, project, requestRepaint: this.requestRepaint };
+    const { activeState, activeStateWidgetId } = this.currentOptions;
+    const ctx: RenderContext = {
+      ctx: c,
+      project,
+      requestRepaint: this.requestRepaint,
+      activeState,
+      activeStateWidgetId,
+    };
     const root: Box = { x: 0, y: 0, width, height };
     const hits: HitEntry[] = [];
     for (const widget of page.widgets) {
@@ -115,15 +132,20 @@ function renderWidget(
   hits: HitEntry[],
   depth: number,
 ): void {
+  // If this is the selected widget and a state is forced, shallow-merge the
+  // corresponding `pressed:` / `checked:` / `disabled:` block onto props so
+  // every resolveProp() call downstream reads the state-scoped value without
+  // the renderers having to know anything about states.
+  const effective = maybeForceState(widget, ctx);
   // Memoise the intrinsic measure so both axes share one traversal.
   let memo: { width: number; height: number } | undefined;
-  const getMeasure = () => (memo ??= measureContent(widget, ctx));
-  const box = computeBox(widget, parentBox, parentSlot, ctx.project.styles, {
+  const getMeasure = () => (memo ??= measureContent(effective, ctx));
+  const box = computeBox(effective, parentBox, parentSlot, ctx.project.styles, {
     width: () => getMeasure().width,
     height: () => getMeasure().height,
   });
-  const drawn = rendererFor(widget.type)(widget, box, ctx);
-  const inner = applyPadding(drawn, widget, ctx.project.styles);
+  const drawn = rendererFor(effective.type)(effective, box, ctx);
+  const inner = applyPadding(drawn, effective, ctx.project.styles);
 
   if (widget.widgetId) {
     hits.push({ widgetId: widget.widgetId, box: drawn, depth });
@@ -179,4 +201,21 @@ function resolveChildSize(
     width: sizeProp(wProp, parentInner.width, () => m().width),
     height: sizeProp(hProp, parentInner.height, () => m().height),
   };
+}
+
+/**
+ * If `widget` is the one the user asked to preview in a forced LVGL state,
+ * return a clone whose `props` has that state's block shallow-merged on top.
+ * Otherwise the original is returned unchanged (reference-identical).
+ *
+ * Scope: only the selected widget is affected — children keep their defaults,
+ * matching Chromium DevTools' per-element state toggles.
+ */
+function maybeForceState(widget: LvglWidget, ctx: RenderContext): LvglWidget {
+  const { activeState, activeStateWidgetId } = ctx;
+  if (!activeState || !activeStateWidgetId) return widget;
+  if (widget.widgetId !== activeStateWidgetId) return widget;
+  const block = widget.props[activeState];
+  if (!block || typeof block !== 'object' || Array.isArray(block)) return widget;
+  return { ...widget, props: { ...widget.props, ...(block as Record<string, unknown>) } };
 }

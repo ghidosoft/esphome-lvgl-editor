@@ -1,4 +1,4 @@
-import type { PropertySchema } from './index';
+import type { PropertySchema, SchemaEntry } from './index';
 
 /** LVGL alignment anchors accepted by the `align:` property. */
 export const ALIGN_VALUES = [
@@ -33,3 +33,34 @@ export const COMMON_SCHEMA: PropertySchema = [
   { key: 'pad_bottom', kind: 'number', min: 0, unit: 'px' },
   { key: 'pad_left', kind: 'number', min: 0, unit: 'px' },
 ];
+
+/**
+ * Style props that LVGL allows per-state — the ones that meaningfully change
+ * a widget's look when it enters `pressed`/`checked`/`disabled`. Reused for
+ * all three state groups so they share one schema source.
+ */
+export const STATE_PROP_ENTRIES: SchemaEntry[] = [
+  { key: 'bg_color', kind: 'color' },
+  { key: 'bg_opa', kind: 'number', min: 0, max: 255 },
+  { key: 'border_color', kind: 'color' },
+  { key: 'border_width', kind: 'number', min: 0, unit: 'px' },
+  { key: 'border_opa', kind: 'number', min: 0, max: 255 },
+  { key: 'radius', kind: 'number', min: 0, unit: 'px' },
+  { key: 'text_color', kind: 'color' },
+  { key: 'text_opa', kind: 'number', min: 0, max: 255 },
+];
+
+/** Keys corresponding to LVGL states that the editor exposes. */
+export const STATE_KEYS = ['pressed', 'checked', 'disabled'] as const;
+
+/**
+ * Per-state style groups appended to every widget's schema. Renders as three
+ * nested sections at the bottom of the property panel — using the existing
+ * `SchemaGroup` machinery that powers slider's `indicator`/`knob`.
+ */
+export const COMMON_STATE_GROUPS: PropertySchema = STATE_KEYS.map((state) => ({
+  key: state,
+  kind: 'group',
+  label: state.charAt(0).toUpperCase() + state.slice(1),
+  entries: STATE_PROP_ENTRIES,
+}));

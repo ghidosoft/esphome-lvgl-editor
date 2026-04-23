@@ -20,7 +20,6 @@ the tool gets used.
 ## Medium-term (open features)
 
 - [ ] **Page navigation via `on_click: lvgl.page.show`**: clicking on the canvas should switch the active page. Turns the preview into a navigable prototype.
-- [ ] **State toggles**: `pressed:` / `checked:` / `disabled:` exposed as UI tabs to inspect every state of a widget without editing the YAML.
 - [ ] **Page-transition animations**: `FADE_IN`, `MOVE_LEFT` as a visual transition when switching pages (via `on_click` or sidebar).
 - [ ] **Animated spinner**: currently static at 270°, add rotation (RAF) for realism.
 - [ ] **Interactive sliders/bars**: dragging the knob in the preview updates a local `value` (no write-back to YAML) — useful for testing ranges.

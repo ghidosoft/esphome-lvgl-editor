@@ -7,6 +7,7 @@ import { getNested, splitKey } from '../editor/nestedKey';
 import { PropControl } from './PropControl';
 import { StylesField } from './StylesField';
 import { Breadcrumb } from './Breadcrumb';
+import { StateToggleStrip } from './StateToggleStrip';
 
 interface Props {
   project: EsphomeProject;
@@ -31,6 +32,8 @@ export function PropertyPanel({ project }: Props) {
   const widgetDeletionsMap = useEditorStore((s) => s.widgetDeletions);
   const updateProp = useEditorStore((s) => s.updateProp);
   const deleteProp = useEditorStore((s) => s.deleteProp);
+  const activeState = useEditorStore((s) => s.activeState);
+  const setActiveState = useEditorStore((s) => s.setActiveState);
 
   if (!selectedWidgetId) {
     return <div className="panel__hint">Click a widget on the canvas to inspect it.</div>;
@@ -95,6 +98,7 @@ export function PropertyPanel({ project }: Props) {
         <div className="panel-body__type">{widget.type}</div>
         <div className="panel-body__id">{selectedWidgetId}</div>
         {sources.self && <OriginLine label="defined in" file={sources.self.file} />}
+        <StateToggleStrip widget={widget} activeState={activeState} onChange={setActiveState} />
       </header>
 
       <div className="panel-body__rows">

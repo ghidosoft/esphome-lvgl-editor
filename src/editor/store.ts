@@ -4,6 +4,15 @@ import type { HitEntry } from '../renderer/CanvasStage';
 import { deleteNested, setNested, splitKey } from './nestedKey';
 
 /**
+ * LVGL per-widget visual state for preview. `default` means "no state forced",
+ * anything else previews the widget as if that state were active — reading
+ * the corresponding `pressed:` / `checked:` / `disabled:` YAML block on top
+ * of the default props. Single-select for now (mirrors Chromium DevTools'
+ * typical usage of `:hov` toggles even though multiple can combine).
+ */
+export type WidgetState = 'default' | 'pressed' | 'checked' | 'disabled';
+
+/**
  * Editor state shared by canvas, overlay, and side-panels.
  *
  * Two kinds of pending edits coexist:
@@ -22,6 +31,8 @@ export interface EditorState {
   selectedWidgetId: WidgetId | null;
   hitList: HitEntry[];
   activeTab: 'properties' | 'variables' | 'styles';
+  /** Forced LVGL state for the selected widget's preview. Reset on re-selection. */
+  activeState: WidgetState;
   widgetOverrides: Record<WidgetId, Record<string, unknown>>;
   varOverrides: Record<string, string>;
   /** Per-style prop edits. Same shape as widgetOverrides. */
@@ -36,6 +47,7 @@ export interface EditorState {
   setSelected: (id: WidgetId | null) => void;
   setHitList: (list: HitEntry[]) => void;
   setActiveTab: (tab: 'properties' | 'variables' | 'styles') => void;
+  setActiveState: (state: WidgetState) => void;
   /**
    * Update a widget property. Dispatches to `varOverrides` when the prop was
    * bound to `${var}` in the source — editing the var is what the user
@@ -63,6 +75,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   selectedWidgetId: null,
   hitList: [],
   activeTab: 'properties',
+  activeState: 'default',
   widgetOverrides: {},
   varOverrides: {},
   styleOverrides: {},
@@ -71,9 +84,12 @@ export const useEditorStore = create<EditorState>((set) => ({
   saving: false,
   saveError: null,
 
-  setSelected: (id) => set({ selectedWidgetId: id }),
+  // Reset the forced state whenever the selection changes — Chromium-style
+  // per-element scoping: state toggles belong to "what's currently selected".
+  setSelected: (id) => set({ selectedWidgetId: id, activeState: 'default' }),
   setHitList: (list) => set({ hitList: list }),
   setActiveTab: (tab) => set({ activeTab: tab }),
+  setActiveState: (state) => set({ activeState: state }),
   updateProp: (project, id, key, value) =>
     set((s) => {
       const propSource = project.sources?.[id]?.props[key];

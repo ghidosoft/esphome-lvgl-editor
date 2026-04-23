@@ -1,4 +1,4 @@
-import { COMMON_SCHEMA } from './common';
+import { COMMON_SCHEMA, COMMON_STATE_GROUPS } from './common';
 import { LABEL_SCHEMA } from './label';
 import { SLIDER_SCHEMA } from './slider';
 
@@ -46,7 +46,7 @@ export function isGroup(item: SchemaItem): item is SchemaGroup {
  */
 export function getSchema(widgetType: string): PropertySchema {
   const specific = SPECIFIC_SCHEMAS[widgetType] ?? [];
-  return [...COMMON_SCHEMA, ...specific];
+  return [...COMMON_SCHEMA, ...specific, ...COMMON_STATE_GROUPS];
 }
 
 const SPECIFIC_SCHEMAS: Record<string, PropertySchema> = {
