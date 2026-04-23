@@ -7,6 +7,7 @@ export function useProject(name: string | undefined): {
   data: EsphomeProject | null;
   error: string | null;
   loading: boolean;
+  refetch: () => void;
 } {
   const [data, setData] = useState<EsphomeProject | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,5 +25,5 @@ export function useProject(name: string | undefined): {
   useEffect(() => { refetch(); }, [refetch]);
   useHmrReload(refetch);
 
-  return { data, error, loading };
+  return { data, error, loading, refetch };
 }

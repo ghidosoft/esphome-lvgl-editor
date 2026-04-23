@@ -1,11 +1,14 @@
+import { useMemo } from 'react';
 import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { DeviceFrame } from './components/DeviceFrame';
 import { CanvasView } from './components/CanvasView';
 import { ErrorDrawer } from './components/ErrorDrawer';
 import { EditorPanel } from './components/EditorPanel';
+import { SaveBar } from './components/SaveBar';
 import { useProject } from './client/hooks/useProject';
 import { useProjects } from './client/hooks/useProjects';
+import { useEditorStore, applyOverrides } from './editor/store';
 
 export function App() {
   const projects = useProjects();
@@ -39,37 +42,47 @@ function ProjectShell({ projects }: { projects: { name: string; hasLvgl: boolean
   const params = useParams<{ name: string; pageId?: string }>();
   const name = params.name!;
   const project = useProject(name);
+  const overrides = useEditorStore((s) => s.overrides);
+
+  // Merge pending edits onto the source project so the canvas repaints locally
+  // while edits are unsaved. Memoized on the shallow identity of `project.data`
+  // and `overrides` so paint stays cheap.
+  const derivedProject = useMemo(
+    () => (project.data ? applyOverrides(project.data, overrides) : null),
+    [project.data, overrides],
+  );
 
   // Default to first non-skip page (mirrors the device's startup page).
-  if (project.data && !params.pageId && project.data.pages.length > 0) {
-    const initial = project.data.pages.find((p) => !p.skip) ?? project.data.pages[0];
+  if (derivedProject && !params.pageId && derivedProject.pages.length > 0) {
+    const initial = derivedProject.pages.find((p) => !p.skip) ?? derivedProject.pages[0];
     return <Navigate to={`/project/${name}/page/${initial.id}`} replace />;
   }
 
-  const activePage = project.data?.pages.find((p) => p.id === params.pageId) ?? null;
+  const activePage = derivedProject?.pages.find((p) => p.id === params.pageId) ?? null;
 
   return (
     <>
-      <Sidebar projects={projects} activeProject={project.data} />
+      <Sidebar projects={projects} activeProject={derivedProject} />
       <main className="stage">
         {project.loading && <div className="loading">Loading {name}…</div>}
         {project.error && <div className="error">Error: {project.error}</div>}
-        {project.data && !project.data.hasLvgl && (
+        {derivedProject && !derivedProject.hasLvgl && (
           <div className="empty">
             <code>{name}</code> doesn't define an <code>lvgl:</code> block.
           </div>
         )}
-        {project.data && project.data.hasLvgl && activePage && (
-          <DeviceFrame width={project.data.display.width} height={project.data.display.height}>
-            <CanvasView project={project.data} page={activePage} />
+        {derivedProject && derivedProject.hasLvgl && activePage && (
+          <DeviceFrame width={derivedProject.display.width} height={derivedProject.display.height}>
+            <CanvasView project={derivedProject} page={activePage} />
           </DeviceFrame>
         )}
-        {project.data && project.data.hasLvgl && !activePage && project.data.pages.length === 0 && (
+        {derivedProject && derivedProject.hasLvgl && !activePage && derivedProject.pages.length === 0 && (
           <div className="empty">No pages defined.</div>
         )}
+        {derivedProject && <SaveBar project={derivedProject} projectName={name} onSaved={project.refetch} />}
       </main>
-      {project.data ? <EditorPanel project={project.data} /> : <aside className="editor-panel" />}
-      <ErrorDrawer errors={project.data?.errors ?? []} />
+      {derivedProject ? <EditorPanel project={derivedProject} /> : <aside className="editor-panel" />}
+      <ErrorDrawer errors={derivedProject?.errors ?? []} />
     </>
   );
 }

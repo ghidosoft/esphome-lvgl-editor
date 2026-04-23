@@ -15,6 +15,7 @@ the tool gets used.
 - [ ] **Explicit `text_align: LEFT/RIGHT/CENTER`** on labels (currently inferred from `align`).
 - [ ] **Multi-line label**: word-wrap when `long_mode: WRAP` / `BREAK`.
 - [ ] **DPR scaling**: crisp canvas on retina displays (currently 1:1).
+- [ ] **PUA glyph rendering in property controls**: Material Symbols codepoints (U+E000–U+F8FF) show as tofu in text inputs. Show the codepoint (e.g. ``) alongside or instead of the glyph, and accept that form in the input.
 - [ ] **Error overlay**: when the parser hits `ProjectLoadError`, show file path + message in a banner instead of an empty canvas.
 - [ ] **Sidebar filtering**: exclude files that aren't actual ESPHome projects (e.g. `merged/*.yaml` — only top-level entries are excluded today).
 
