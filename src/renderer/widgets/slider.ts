@@ -1,5 +1,5 @@
 import type { LvglWidget } from '../../parser/types';
-import { parseColor } from '../colors';
+import { parseColor, parseOpacity, withAlpha } from '../colors';
 import type { Box, RenderContext } from '../context';
 import { resolveProp } from '../styles';
 import { roundedRectPath } from './obj';
@@ -7,7 +7,8 @@ import { roundedRectPath } from './obj';
 /**
  * Approximate horizontal slider: track + indicator (filled portion) + knob.
  * Each part honors its own `bg_color`, `bg_opa`, `border_color`,
- * `border_width`, `radius` — matching LVGL's part selectors.
+ * `border_width`, `border_opa`, `radius` — matching LVGL's part selectors.
+ * Border defaults to invisible (border_opa: 0), like obj.
  */
 export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const styles = ctx.project.styles;
@@ -22,25 +23,28 @@ export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const trackRadius = num(resolveProp(w, 'radius', styles), Math.min(box.height, 8));
   const track: PartStyle = {
     fill: parseColor(resolveProp(w, 'bg_color', styles), '#333333'),
-    fillOpa: opa(resolveProp(w, 'bg_opa', styles), 255),
+    fillOpa: parseOpacity(resolveProp(w, 'bg_opa', styles), 1),
     borderColor: parseColor(resolveProp(w, 'border_color', styles), '#000000'),
     borderWidth: num(resolveProp(w, 'border_width', styles), 0),
+    borderOpa: parseOpacity(resolveProp(w, 'border_opa', styles), 0),
     radius: trackRadius,
   };
   const ind: PartStyle = {
     fill: parseColor(indicator?.bg_color, '#3aa0ff'),
-    fillOpa: opa(indicator?.bg_opa, 255),
+    fillOpa: parseOpacity(indicator?.bg_opa, 1),
     borderColor: parseColor(indicator?.border_color, '#000000'),
     borderWidth: num(indicator?.border_width, 0),
+    borderOpa: parseOpacity(indicator?.border_opa, 0),
     radius: num(indicator?.radius, trackRadius),
   };
   // LVGL knob default is a circle (radius ≥ half the knob's short side).
   const knobHalf = box.height * 0.9;
   const kn: PartStyle = {
     fill: parseColor(knob?.bg_color, '#ffffff'),
-    fillOpa: opa(knob?.bg_opa, 255),
+    fillOpa: parseOpacity(knob?.bg_opa, 1),
     borderColor: parseColor(knob?.border_color, '#000000'),
     borderWidth: num(knob?.border_width, 0),
+    borderOpa: parseOpacity(knob?.border_opa, 0),
     radius: num(knob?.radius, knobHalf),
   };
 
@@ -65,9 +69,10 @@ export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
 
 interface PartStyle {
   fill: string;
-  fillOpa: number;
+  fillOpa: number;    // 0..1
   borderColor: string;
   borderWidth: number;
+  borderOpa: number;  // 0..1
   radius: number;
 }
 
@@ -79,18 +84,13 @@ function fillRect(
   const r = Math.min(s.radius, w / 2, h / 2);
   roundedRectPath(c, x, y, w, h, r);
   if (s.fillOpa > 0) {
-    c.save();
-    c.globalAlpha = s.fillOpa / 255;
-    c.fillStyle = s.fill;
+    c.fillStyle = s.fillOpa < 1 ? withAlpha(s.fill, s.fillOpa) : s.fill;
     c.fill();
-    c.restore();
   }
-  if (s.borderWidth > 0) {
-    c.save();
+  if (s.borderOpa > 0 && s.borderWidth > 0) {
+    c.strokeStyle = s.borderOpa < 1 ? withAlpha(s.borderColor, s.borderOpa) : s.borderColor;
     c.lineWidth = s.borderWidth;
-    c.strokeStyle = s.borderColor;
     c.stroke();
-    c.restore();
   }
 }
 
@@ -106,9 +106,4 @@ function num(v: unknown, fallback: number): number {
     if (!Number.isNaN(n)) return n;
   }
   return fallback;
-}
-
-function opa(v: unknown, fallback: number): number {
-  const n = num(v, fallback);
-  return Math.max(0, Math.min(255, n));
 }

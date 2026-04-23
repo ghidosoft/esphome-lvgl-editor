@@ -5,6 +5,7 @@ const PART_STYLE_ENTRIES: SchemaEntry[] = [
   { key: 'bg_opa', kind: 'number', min: 0, max: 255 },
   { key: 'border_color', kind: 'color' },
   { key: 'border_width', kind: 'number', min: 0, unit: 'px' },
+  { key: 'border_opa', kind: 'number', min: 0, max: 255 },
   { key: 'radius', kind: 'number', min: 0, unit: 'px' },
 ];
 
