@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { EsphomeProject, SubstitutionUsage, WidgetId } from '../parser/types';
 import { useEditorStore } from '../editor/store';
 import { isColorLike, toHexColor, toLvglHex } from '../editor/colors';
@@ -98,7 +98,11 @@ function VarRow({
   onJump?: () => void;
 }) {
   const [draft, setDraft] = useState(value);
-  useEffect(() => setDraft(value), [value]);
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    setDraft(value);
+  }
   const isColor = isColorLike(value) || isColorLike(draft);
   const hex = isColor ? toHexColor(draft) : null;
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { SchemaEntry } from '../editor/schema';
 import { toHexColor, toLvglHex } from '../editor/colors';
 import { decodePua, encodePua } from '../editor/pua';
@@ -47,8 +47,12 @@ function StringInput({
   onChange: (v: unknown) => void;
   disabled?: boolean;
 }) {
-  const [draft, setDraft] = useState(encodePua(toText(value)));
-  useEffect(() => setDraft(encodePua(toText(value))), [value]);
+  const [draft, setDraft] = useState(() => encodePua(toText(value)));
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    setDraft(encodePua(toText(value)));
+  }
   return (
     <input
       type="text"
@@ -75,8 +79,12 @@ function NumberInput({
   onChange: (v: unknown) => void;
   disabled?: boolean;
 }) {
-  const [draft, setDraft] = useState(toText(value));
-  useEffect(() => setDraft(toText(value)), [value]);
+  const [draft, setDraft] = useState(() => toText(value));
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    setDraft(toText(value));
+  }
   return (
     <div className="prop-input-group">
       <input
@@ -113,8 +121,12 @@ function SizeInput({
   onChange: (v: unknown) => void;
   disabled?: boolean;
 }) {
-  const [draft, setDraft] = useState(toText(value));
-  useEffect(() => setDraft(toText(value)), [value]);
+  const [draft, setDraft] = useState(() => toText(value));
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    setDraft(toText(value));
+  }
   return (
     <input
       type="text"
@@ -157,7 +169,11 @@ function ColorInput({
   const current = toText(value);
   const hex = toHexColor(current);
   const [draft, setDraft] = useState(current);
-  useEffect(() => setDraft(current), [current]);
+  const [lastCurrent, setLastCurrent] = useState(current);
+  if (current !== lastCurrent) {
+    setLastCurrent(current);
+    setDraft(current);
+  }
 
   return (
     <div className="prop-input-group">

@@ -33,6 +33,9 @@ export function useProject(name: string | undefined): {
   }, [name]);
 
   useEffect(() => {
+    // TODO: migrate to TanStack Query. `refetch()` calls `setLoading(true)`
+    // synchronously, which is the cascading-render pattern the compiler flags.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refetch();
   }, [refetch]);
   useHmrReload(refetch);

@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from 'react';
-import { useEditorStore } from '../editor/store';
-import { buildEditOps } from '../editor/mutation';
+import { useEffect, useEffectEvent, useMemo } from 'react';
 import { commitProject, postEdit } from '../client/api';
+import { buildEditOps } from '../editor/mutation';
+import { useEditorStore } from '../editor/store';
 import type { EsphomeProject } from '../parser/types';
 
 interface Props {
@@ -71,20 +71,21 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
     } finally {
       setSaving(false);
     }
-  }
+  };
+
+  const doSaveEvent = useEffectEvent(() => doSave());
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         if (!hasAnything) return;
         e.preventDefault();
-        void doSave();
+        void doSaveEvent();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasAnything, ops, projectName]);
+  }, [hasAnything]);
 
   if (!hasAnything && !saveError) return null;
 
