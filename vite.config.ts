@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { lvglPlugin } from './src/server/plugin';
@@ -11,11 +12,8 @@ const ESPHOME_DIR = resolve(__dirname, '../home-assistant/esphome');
 
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler', {}]],
-      },
-    }),
+    react(),
+    babel({ presets: [reactCompilerPreset()] }),
     lvglPlugin({ esphomeDir: ESPHOME_DIR }),
   ],
   resolve: {
