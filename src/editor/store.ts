@@ -41,7 +41,6 @@ export interface EditorState {
   widgetDeletions: Record<WidgetId, string[]>;
   /** Per-style set of prop keys pending removal. */
   styleDeletions: Record<string, string[]>;
-  saving: boolean;
   saveError: string | null;
 
   setSelected: (id: WidgetId | null) => void;
@@ -67,7 +66,6 @@ export interface EditorState {
   /** Update a substitution's value directly (used by VariablesPanel). */
   updateVar: (name: string, value: string | undefined) => void;
   clearOverrides: () => void;
-  setSaving: (v: boolean) => void;
   setSaveError: (e: string | null) => void;
 }
 
@@ -81,7 +79,6 @@ export const useEditorStore = create<EditorState>((set) => ({
   styleOverrides: {},
   widgetDeletions: {},
   styleDeletions: {},
-  saving: false,
   saveError: null,
 
   // Reset the forced state whenever the selection changes — Chromium-style
@@ -179,7 +176,6 @@ export const useEditorStore = create<EditorState>((set) => ({
       styleOverrides: {},
       styleDeletions: {},
     }),
-  setSaving: (v) => set({ saving: v }),
   setSaveError: (e) => set({ saveError: e }),
 }));
 

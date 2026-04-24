@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './components/Sidebar';
 import { DeviceFrame } from './components/DeviceFrame';
 import { CanvasView } from './components/CanvasView';
@@ -8,9 +9,16 @@ import { EditorPanel } from './components/EditorPanel';
 import { SaveBar } from './components/SaveBar';
 import { useProject } from './client/hooks/useProject';
 import { useProjects } from './client/hooks/useProjects';
+import { useHmrReload } from './client/hooks/useHmrReload';
 import { useEditorStore, applyOverrides } from './editor/store';
 
 export function App() {
+  const queryClient = useQueryClient();
+  useHmrReload(
+    useCallback(() => {
+      void queryClient.invalidateQueries({ queryKey: ['lvgl'] });
+    }, [queryClient]),
+  );
   const projects = useProjects();
 
   return (
@@ -106,9 +114,7 @@ function ProjectShell({ projects }: { projects: { name: string; hasLvgl: boolean
           derivedProject.hasLvgl &&
           !activePage &&
           derivedProject.pages.length === 0 && <div className="empty">No pages defined.</div>}
-        {derivedProject && (
-          <SaveBar project={derivedProject} projectName={name} onSaved={project.refetch} />
-        )}
+        {derivedProject && <SaveBar project={derivedProject} projectName={name} />}
       </main>
       {derivedProject ? (
         <EditorPanel project={derivedProject} />

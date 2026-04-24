@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { fetchProject } from '../api';
 import type { EsphomeProject } from '../../parser/types';
-import { useHmrReload } from './useHmrReload';
 
 export function useProject(name: string | undefined): {
   data: EsphomeProject | null;
@@ -9,36 +8,16 @@ export function useProject(name: string | undefined): {
   loading: boolean;
   refetch: () => void;
 } {
-  const [data, setData] = useState<EsphomeProject | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const query = useQuery({
+    queryKey: ['lvgl', 'project', name],
+    queryFn: () => fetchProject(name!),
+    enabled: !!name,
+  });
 
-  const refetch = useCallback(() => {
-    if (!name) {
-      setData(null);
-      setError(null);
-      return;
-    }
-    setLoading(true);
-    fetchProject(name)
-      .then((d) => {
-        setData(d);
-        setError(null);
-      })
-      .catch((e: Error) => {
-        setData(null);
-        setError(e.message);
-      })
-      .finally(() => setLoading(false));
-  }, [name]);
-
-  useEffect(() => {
-    // TODO: migrate to TanStack Query. `refetch()` calls `setLoading(true)`
-    // synchronously, which is the cascading-render pattern the compiler flags.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    refetch();
-  }, [refetch]);
-  useHmrReload(refetch);
-
-  return { data, error, loading, refetch };
+  return {
+    data: query.data ?? null,
+    error: query.error ? query.error.message : null,
+    loading: !!name && query.isPending,
+    refetch: () => void query.refetch(),
+  };
 }

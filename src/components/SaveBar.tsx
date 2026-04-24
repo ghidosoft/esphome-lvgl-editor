@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useMemo } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { commitProject, postEdit } from '../client/api';
 import { buildEditOps } from '../editor/mutation';
 import { useEditorStore } from '../editor/store';
@@ -7,7 +8,6 @@ import type { EsphomeProject } from '../parser/types';
 interface Props {
   project: EsphomeProject;
   projectName: string;
-  onSaved: () => void;
 }
 
 /**
@@ -16,20 +16,20 @@ interface Props {
  *
  * Save flow: translate overrides → ops, POST /__lvgl/edit (server mutates
  * CST in memory), then POST /__lvgl/commit (server writes dirty files). On
- * success: clear overrides, ask the project hook to refetch so the new
+ * success: clear overrides and invalidate the cached project so the new
  * source-map reflects on-disk state.
  */
-export function SaveBar({ project, projectName, onSaved }: Props) {
+export function SaveBar({ project, projectName }: Props) {
   const widgetOverrides = useEditorStore((s) => s.widgetOverrides);
   const varOverrides = useEditorStore((s) => s.varOverrides);
   const widgetDeletions = useEditorStore((s) => s.widgetDeletions);
   const styleOverrides = useEditorStore((s) => s.styleOverrides);
   const styleDeletions = useEditorStore((s) => s.styleDeletions);
-  const saving = useEditorStore((s) => s.saving);
   const saveError = useEditorStore((s) => s.saveError);
-  const setSaving = useEditorStore((s) => s.setSaving);
   const setSaveError = useEditorStore((s) => s.setSaveError);
   const clearOverrides = useEditorStore((s) => s.clearOverrides);
+
+  const queryClient = useQueryClient();
 
   const { ops, skipped } = useMemo(
     () =>
@@ -44,6 +44,23 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
     [project, widgetOverrides, varOverrides, widgetDeletions, styleOverrides, styleDeletions],
   );
 
+  const save = useMutation({
+    mutationFn: async () => {
+      await postEdit(projectName, ops);
+      await commitProject(projectName);
+    },
+    onMutate: () => {
+      setSaveError(null);
+    },
+    onSuccess: () => {
+      clearOverrides();
+      void queryClient.invalidateQueries({ queryKey: ['lvgl', 'project', projectName] });
+    },
+    onError: (e: Error) => setSaveError(e.message),
+  });
+
+  const saving = save.isPending;
+
   const dirtyWidgetIds = new Set([
     ...Object.keys(widgetOverrides),
     ...Object.keys(widgetDeletions),
@@ -54,33 +71,17 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
   const varCount = Object.keys(varOverrides).length;
   const hasAnything = widgetCount + styleCount + varCount > 0;
 
-  async function doSave() {
-    if (ops.length === 0) {
-      setSaveError('No saveable changes — all pending edits are in an unsupported form.');
-      return;
-    }
-    setSaving(true);
-    setSaveError(null);
-    try {
-      await postEdit(projectName, ops);
-      await commitProject(projectName);
-      clearOverrides();
-      onSaved();
-    } catch (e) {
-      setSaveError((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const doSaveEvent = useEffectEvent(() => doSave());
+  const doSaveEvent = useEffectEvent(() => {
+    if (ops.length === 0) return;
+    save.mutate();
+  });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         if (!hasAnything) return;
         e.preventDefault();
-        void doSaveEvent();
+        doSaveEvent();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -131,7 +132,7 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
         <button
           type="button"
           className="save-bar__save"
-          onClick={void doSave}
+          onClick={() => save.mutate()}
           disabled={saving || ops.length === 0}
         >
           {saving ? 'Saving…' : `Save (${ops.length})`}
