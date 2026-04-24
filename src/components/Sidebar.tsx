@@ -26,7 +26,9 @@ export function Sidebar({ projects, activeProject }: SidebarProps) {
                   (navActive ? ' sidebar__project--active' : '') +
                   (!p.hasLvgl ? ' sidebar__project--disabled' : '')
                 }
-                onClick={(e) => { if (!p.hasLvgl) e.preventDefault(); }}
+                onClick={(e) => {
+                  if (!p.hasLvgl) e.preventDefault();
+                }}
               >
                 <span className="sidebar__name">{p.name}</span>
                 {!p.hasLvgl && <span className="sidebar__badge">no LVGL</span>}

@@ -16,7 +16,12 @@ export function mergePackages(
 ): { plain: Record<string, unknown>; origin: Record<string, OriginNode> } {
   const packages = plainRoot.packages;
   const packagesOrigin = originRoot.packages;
-  if (!packages || typeof packages !== 'object' || isOpaqueTag(packages) || Array.isArray(packages)) {
+  if (
+    !packages ||
+    typeof packages !== 'object' ||
+    isOpaqueTag(packages) ||
+    Array.isArray(packages)
+  ) {
     return { plain: plainRoot, origin: originRoot };
   }
 

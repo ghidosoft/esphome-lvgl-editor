@@ -13,12 +13,11 @@ interface DeviceFrameProps {
  */
 export function DeviceFrame({ width, height, children }: DeviceFrameProps) {
   return (
-    <div
-      className="device-frame"
-      style={{ aspectRatio: `${width} / ${height}` }}
-    >
+    <div className="device-frame" style={{ aspectRatio: `${width} / ${height}` }}>
       <div className="device-frame__bezel">{children}</div>
-      <div className="device-frame__caption">{width}×{height}</div>
+      <div className="device-frame__caption">
+        {width}×{height}
+      </div>
     </div>
   );
 }

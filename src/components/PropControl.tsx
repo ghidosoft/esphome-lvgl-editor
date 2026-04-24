@@ -38,7 +38,15 @@ export function PropControl({ entry, value, onChange, disabled }: Props) {
   }
 }
 
-function StringInput({ value, onChange, disabled }: { value: unknown; onChange: (v: unknown) => void; disabled?: boolean }) {
+function StringInput({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: unknown;
+  onChange: (v: unknown) => void;
+  disabled?: boolean;
+}) {
   const [draft, setDraft] = useState(encodePua(toText(value)));
   useEffect(() => setDraft(encodePua(toText(value))), [value]);
   return (
@@ -50,7 +58,7 @@ function StringInput({ value, onChange, disabled }: { value: unknown; onChange: 
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => commitIfChanged(draft, value, onChange, decodePua)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
+        if (e.key === 'Enter') e.currentTarget.blur();
       }}
     />
   );
@@ -79,9 +87,11 @@ function NumberInput({
         min={entry.min}
         max={entry.max}
         onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => commitIfChanged(draft, value, onChange, (s) => (s === '' ? undefined : Number(s)))}
+        onBlur={() =>
+          commitIfChanged(draft, value, onChange, (s) => (s === '' ? undefined : Number(s)))
+        }
         onKeyDown={(e) => {
-          if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
+          if (e.key === 'Enter') e.currentTarget.blur();
         }}
       />
       {entry.unit && <span className="prop-input__unit">{entry.unit}</span>}
@@ -94,7 +104,15 @@ function NumberInput({
  * `SIZE_CONTENT`. We keep a plain text input because the domain is too varied
  * for a native <input type=number>.
  */
-function SizeInput({ value, onChange, disabled }: { value: unknown; onChange: (v: unknown) => void; disabled?: boolean }) {
+function SizeInput({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: unknown;
+  onChange: (v: unknown) => void;
+  disabled?: boolean;
+}) {
   const [draft, setDraft] = useState(toText(value));
   useEffect(() => setDraft(toText(value)), [value]);
   return (
@@ -107,7 +125,7 @@ function SizeInput({ value, onChange, disabled }: { value: unknown; onChange: (v
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => commitIfChanged(draft, value, onChange, parseSize)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
+        if (e.key === 'Enter') e.currentTarget.blur();
       }}
     />
   );
@@ -127,7 +145,15 @@ function parseSize(s: string): unknown {
  * so users can paste `0xRRGGBB` values matching how ESPHome colors are spelled
  * in YAML. The picker and the text stay in sync.
  */
-function ColorInput({ value, onChange, disabled }: { value: unknown; onChange: (v: unknown) => void; disabled?: boolean }) {
+function ColorInput({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: unknown;
+  onChange: (v: unknown) => void;
+  disabled?: boolean;
+}) {
   const current = toText(value);
   const hex = toHexColor(current);
   const [draft, setDraft] = useState(current);
@@ -154,7 +180,7 @@ function ColorInput({ value, onChange, disabled }: { value: unknown; onChange: (
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => commitIfChanged(draft, value, onChange, (s) => s)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
+          if (e.key === 'Enter') e.currentTarget.blur();
         }}
       />
     </div>
@@ -215,4 +241,3 @@ function commitIfChanged(
   if (typeof parsed === 'number' && Number.isNaN(parsed)) return;
   onChange(parsed);
 }
-

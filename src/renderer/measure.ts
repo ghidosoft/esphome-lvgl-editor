@@ -25,7 +25,10 @@ export function measureContent(
   return withPadding(widget, ctx, measureChildren(widget, ctx));
 }
 
-function measureChildren(widget: LvglWidget, ctx: RenderContext): { width: number; height: number } {
+function measureChildren(
+  widget: LvglWidget,
+  ctx: RenderContext,
+): { width: number; height: number } {
   if (widget.children.length === 0) return { width: 0, height: 0 };
 
   const childSizes = widget.children.map((c) => measureChildIntrinsic(c, ctx));
@@ -62,26 +65,39 @@ type Anchor = 'start' | 'mid' | 'end';
 
 function extentFor(anchor: Anchor, offset: number, childSize: number): number {
   switch (anchor) {
-    case 'start': return Math.max(0, offset + childSize);
-    case 'mid':   return 2 * Math.abs(offset) + childSize;
-    case 'end':   return Math.max(0, childSize - offset);
+    case 'start':
+      return Math.max(0, offset + childSize);
+    case 'mid':
+      return 2 * Math.abs(offset) + childSize;
+    case 'end':
+      return Math.max(0, childSize - offset);
   }
 }
 
 function anchorsOf(align: string): { hAnchor: Anchor; vAnchor: Anchor } {
   switch (align) {
-    case 'TOP_LEFT':     return { hAnchor: 'start', vAnchor: 'start' };
-    case 'TOP_MID':      return { hAnchor: 'mid',   vAnchor: 'start' };
-    case 'TOP_RIGHT':    return { hAnchor: 'end',   vAnchor: 'start' };
-    case 'LEFT_MID':     return { hAnchor: 'start', vAnchor: 'mid' };
-    case 'CENTER':       return { hAnchor: 'mid',   vAnchor: 'mid' };
-    case 'RIGHT_MID':    return { hAnchor: 'end',   vAnchor: 'mid' };
-    case 'BOTTOM_LEFT':  return { hAnchor: 'start', vAnchor: 'end' };
-    case 'BOTTOM_MID':   return { hAnchor: 'mid',   vAnchor: 'end' };
-    case 'BOTTOM_RIGHT': return { hAnchor: 'end',   vAnchor: 'end' };
+    case 'TOP_LEFT':
+      return { hAnchor: 'start', vAnchor: 'start' };
+    case 'TOP_MID':
+      return { hAnchor: 'mid', vAnchor: 'start' };
+    case 'TOP_RIGHT':
+      return { hAnchor: 'end', vAnchor: 'start' };
+    case 'LEFT_MID':
+      return { hAnchor: 'start', vAnchor: 'mid' };
+    case 'CENTER':
+      return { hAnchor: 'mid', vAnchor: 'mid' };
+    case 'RIGHT_MID':
+      return { hAnchor: 'end', vAnchor: 'mid' };
+    case 'BOTTOM_LEFT':
+      return { hAnchor: 'start', vAnchor: 'end' };
+    case 'BOTTOM_MID':
+      return { hAnchor: 'mid', vAnchor: 'end' };
+    case 'BOTTOM_RIGHT':
+      return { hAnchor: 'end', vAnchor: 'end' };
     // OUT_* anchors position the child outside the parent — they shouldn't
     // contribute to the parent's content extent.
-    default:             return { hAnchor: 'start', vAnchor: 'start' };
+    default:
+      return { hAnchor: 'start', vAnchor: 'start' };
   }
 }
 

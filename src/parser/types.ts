@@ -72,9 +72,9 @@ export interface FlexLayoutSpec {
 }
 
 export type TrackSize =
-  | { kind: 'fr'; value: number }     // fr(N)
-  | { kind: 'px'; value: number }     // numeric literal
-  | { kind: 'content' };              // "content"
+  | { kind: 'fr'; value: number } // fr(N)
+  | { kind: 'px'; value: number } // numeric literal
+  | { kind: 'content' }; // "content"
 
 export interface LvglWidget {
   type: string;
@@ -105,7 +105,7 @@ export function isOpaqueTag(v: unknown): v is OpaqueTag {
     typeof v === 'object' &&
     v !== null &&
     '__tag' in v &&
-    typeof (v as { __tag: unknown }).__tag === 'string' &&
+    typeof v.__tag === 'string' &&
     (v as { __tag: string }).__tag.startsWith('!')
   );
 }

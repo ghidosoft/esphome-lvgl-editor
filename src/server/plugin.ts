@@ -1,6 +1,7 @@
 import type { Plugin, ViteDevServer } from 'vite';
 import { resolve } from 'node:path';
 import { existsSync, writeFileSync, renameSync } from 'node:fs';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { loadProject } from '../parser/loader';
 import { FileRegistry } from '../parser/fileRegistry';
 import type { EsphomeProject } from '../parser/types';
@@ -65,7 +66,7 @@ export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
         if (req.method && req.method !== 'GET') return undefined;
         const url = req.url ?? '';
         const name = decodeURIComponent(url.replace(/^\/+/, '').split('?')[0]);
-        if (!name || /[\/\\]/.test(name) || name.includes('..')) {
+        if (!name || /[/\\]/.test(name) || name.includes('..')) {
           return sendJson(res, 400, { error: 'invalid project name' });
         }
         const path = resolve(esphomeDir, `${name}.yaml`);
@@ -85,9 +86,10 @@ export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
       });
 
       // POST /__lvgl/edit  { project, ops: EditOp[] }
-      server.middlewares.use('/__lvgl/edit', async (req, res) => {
-        if (req.method !== 'POST') return undefined;
-        try {
+      server.middlewares.use(
+        '/__lvgl/edit',
+        asyncHandler(async (req, res) => {
+          if (req.method !== 'POST') return;
           const body = await readJson(req);
           const projectName = String(body.project ?? '');
           const ops: EditOp[] = Array.isArray(body.ops) ? body.ops : [];
@@ -98,9 +100,13 @@ export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
           const appliedFiles = new Set<string>();
           for (const op of ops) {
             const abs = resolve(op.file);
-            const safe = abs.startsWith(esphomeDir + '/') || abs.startsWith(esphomeDir + '\\') || abs === esphomeDir;
+            const safe =
+              abs.startsWith(esphomeDir + '/') ||
+              abs.startsWith(esphomeDir + '\\') ||
+              abs === esphomeDir;
             if (!safe) return sendJson(res, 400, { error: `path outside esphomeDir: ${abs}` });
-            if (!entry.registry.has(abs)) return sendJson(res, 400, { error: `file not in project: ${abs}` });
+            if (!entry.registry.has(abs))
+              return sendJson(res, 400, { error: `file not in project: ${abs}` });
             if (!Array.isArray(op.yamlPath) || op.yamlPath.length === 0) {
               return sendJson(res, 400, { error: 'yamlPath must be a non-empty array' });
             }
@@ -108,26 +114,31 @@ export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
             const opKind: 'set' | 'delete' = op.op === 'delete' ? 'delete' : 'set';
             try {
               if (opKind === 'delete') {
-                fileEntry.doc.deleteIn(op.yamlPath as (string | number)[]);
+                fileEntry.doc.deleteIn(op.yamlPath);
               } else {
-                fileEntry.doc.setIn(op.yamlPath as (string | number)[], op.newValue);
+                fileEntry.doc.setIn(op.yamlPath, op.newValue);
               }
             } catch (e) {
-              return sendJson(res, 500, { error: `${opKind} failed for ${abs}: ${(e as Error).message}` });
+              return sendJson(res, 500, {
+                error: `${opKind} failed for ${abs}: ${(e as Error).message}`,
+              });
             }
             entry.registry.markDirty(abs);
             appliedFiles.add(abs);
           }
-          sendJson(res, 200, { ok: true, dirty: entry.registry.dirtyFiles(), applied: [...appliedFiles] });
-        } catch (e) {
-          sendJson(res, 500, { error: (e as Error).message });
-        }
-      });
+          sendJson(res, 200, {
+            ok: true,
+            dirty: entry.registry.dirtyFiles(),
+            applied: [...appliedFiles],
+          });
+        }),
+      );
 
       // POST /__lvgl/commit  { project }
-      server.middlewares.use('/__lvgl/commit', async (req, res) => {
-        if (req.method !== 'POST') return undefined;
-        try {
+      server.middlewares.use(
+        '/__lvgl/commit',
+        asyncHandler(async (req, res) => {
+          if (req.method !== 'POST') return;
           const body = await readJson(req);
           const projectName = String(body.project ?? '');
           const projectPath = resolve(esphomeDir, `${projectName}.yaml`);
@@ -150,8 +161,9 @@ export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
             // re-escape them in our output to stay byte-compatible.
             if (/\\u[0-9A-Fa-f]{4}/.test(fileEntry.raw)) {
               const PUA_RE = new RegExp('[\\uE000-\\uF8FF]', 'g');
-              text = text.replace(PUA_RE, (ch) =>
-                '\\u' + ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')
+              text = text.replace(
+                PUA_RE,
+                (ch) => '\\u' + ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0'),
               );
             }
             // Suppress the watcher for this path long enough for the FS event
@@ -168,24 +180,32 @@ export function lvglPlugin({ esphomeDir }: LvglPluginOptions): Plugin {
           // then mutated in the CST only). Invalidate so the next GET rebuilds.
           cache.delete(projectPath);
           sendJson(res, 200, { ok: true, written });
-        } catch (e) {
-          sendJson(res, 500, { error: (e as Error).message });
-        }
-      });
+        }),
+      );
     },
   };
 }
 
-function sendJson(res: import('node:http').ServerResponse, status: number, body: unknown) {
+function sendJson(res: ServerResponse, status: number, body: unknown) {
   res.statusCode = status;
   res.setHeader('content-type', 'application/json');
   res.end(JSON.stringify(body));
 }
 
-async function readJson(req: import('node:http').IncomingMessage): Promise<Record<string, unknown>> {
+async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(chunk as Buffer);
   const raw = Buffer.concat(chunks).toString('utf8');
   if (!raw) return {};
   return JSON.parse(raw) as Record<string, unknown>;
+}
+
+function asyncHandler(
+  fn: (req: IncomingMessage, res: ServerResponse) => Promise<unknown>,
+): (req: IncomingMessage, res: ServerResponse) => void {
+  return (req, res) => {
+    fn(req, res).catch((e: unknown) => {
+      sendJson(res, 500, { error: (e as Error).message });
+    });
+  };
 }

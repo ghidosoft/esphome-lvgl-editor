@@ -35,17 +35,24 @@ export function computeBox(
     const xAlign = String(xAlignRaw ?? 'STRETCH').toUpperCase();
     const yAlign = String(yAlignRaw ?? 'STRETCH').toUpperCase();
     const w = xAlign === 'STRETCH' || !hasDeclaredW ? slot.width : Math.min(slot.width, declaredW);
-    const h = yAlign === 'STRETCH' || !hasDeclaredH ? slot.height : Math.min(slot.height, declaredH);
-    const x = xAlign === 'STRETCH' || !hasDeclaredW
-      ? slot.x
-      : xAlign === 'END' ? slot.x + slot.width - w
-      : xAlign === 'START' ? slot.x
-      : slot.x + (slot.width - w) / 2;
-    const y = yAlign === 'STRETCH' || !hasDeclaredH
-      ? slot.y
-      : yAlign === 'END' ? slot.y + slot.height - h
-      : yAlign === 'START' ? slot.y
-      : slot.y + (slot.height - h) / 2;
+    const h =
+      yAlign === 'STRETCH' || !hasDeclaredH ? slot.height : Math.min(slot.height, declaredH);
+    const x =
+      xAlign === 'STRETCH' || !hasDeclaredW
+        ? slot.x
+        : xAlign === 'END'
+          ? slot.x + slot.width - w
+          : xAlign === 'START'
+            ? slot.x
+            : slot.x + (slot.width - w) / 2;
+    const y =
+      yAlign === 'STRETCH' || !hasDeclaredH
+        ? slot.y
+        : yAlign === 'END'
+          ? slot.y + slot.height - h
+          : yAlign === 'START'
+            ? slot.y
+            : slot.y + (slot.height - h) / 2;
     return { x, y, width: w, height: h };
   }
 
@@ -60,11 +67,7 @@ export function computeBox(
 }
 
 /** Inset an absolute box by a per-side padding amount. */
-export function applyPadding(
-  box: Box,
-  widget: LvglWidget,
-  styles: Record<string, StyleSpec>,
-): Box {
+export function applyPadding(box: Box, widget: LvglWidget, styles: Record<string, StyleSpec>): Box {
   const padAll = numProp(resolveProp(widget, 'pad_all', styles), 0);
   const padTop = numProp(resolveProp(widget, 'pad_top', styles), padAll);
   const padRight = numProp(resolveProp(widget, 'pad_right', styles), padAll);
@@ -96,11 +99,7 @@ export function numProp(v: unknown, fallback: number): number {
  *     pass existed, so call sites without a measure callback don't regress)
  * Negative percentages clamp to 0. Malformed percentages bail to parentSize.
  */
-export function sizeProp(
-  v: unknown,
-  parentSize: number,
-  measureContent?: () => number,
-): number {
+export function sizeProp(v: unknown, parentSize: number, measureContent?: () => number): number {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
     const trimmed = v.trim();

@@ -31,8 +31,14 @@ export function renderObj(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   if (borderOpa > 0 && borderWidth > 0) {
     c.strokeStyle = borderOpa < 1 ? withAlpha(borderColor, borderOpa) : borderColor;
     c.lineWidth = borderWidth;
-    roundedRectPath(c, box.x + borderWidth / 2, box.y + borderWidth / 2,
-                    box.width - borderWidth, box.height - borderWidth, Math.max(0, radius - borderWidth / 2));
+    roundedRectPath(
+      c,
+      box.x + borderWidth / 2,
+      box.y + borderWidth / 2,
+      box.width - borderWidth,
+      box.height - borderWidth,
+      Math.max(0, radius - borderWidth / 2),
+    );
     c.stroke();
   }
   c.restore();
@@ -49,7 +55,11 @@ export function renderObj(w: LvglWidget, box: Box, ctx: RenderContext): Box {
 
 export function roundedRectPath(
   c: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
 ): void {
   const radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
   c.beginPath();

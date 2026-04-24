@@ -12,8 +12,9 @@ const PUA_RE = /[-]/g;
 const ESC_RE = /\\u([eEfF][0-9a-fA-F]{3})/g;
 
 export function encodePua(s: string): string {
-  return s.replace(PUA_RE, (ch) =>
-    '\\u' + ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0'),
+  return s.replace(
+    PUA_RE,
+    (ch) => '\\u' + ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0'),
   );
 }
 

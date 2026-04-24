@@ -10,7 +10,10 @@ import { resolveProp } from '../styles';
 export function renderSpinner(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const styles = ctx.project.styles;
   const arcColor = parseColor(resolveProp(w, 'arc_color', styles), '#3aa0ff');
-  const trackColor = parseColor(resolveProp(w, 'arc_color_track', styles) ?? resolveProp(w, 'bg_color', styles), '#1f2433');
+  const trackColor = parseColor(
+    resolveProp(w, 'arc_color_track', styles) ?? resolveProp(w, 'bg_color', styles),
+    '#1f2433',
+  );
   const arcWidth = num(resolveProp(w, 'arc_width', styles), 6);
 
   const cx = box.x + box.width / 2;

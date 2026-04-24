@@ -3,7 +3,7 @@ import type { EsphomeProject, LvglPage, LvglWidget, WidgetId } from '../parser/t
 export interface AncestorEntry {
   widget: LvglWidget | null; // null for the page-level entry
   page: LvglPage;
-  id: WidgetId | null;       // page root has no widgetId
+  id: WidgetId | null; // page root has no widgetId
   /** Human-friendly label shown in the breadcrumb. */
   label: string;
 }
@@ -13,10 +13,7 @@ export interface AncestorEntry {
  * every step including the page itself. Returns an empty array if the id
  * isn't found on any page.
  */
-export function findAncestorChain(
-  project: EsphomeProject,
-  widgetId: WidgetId,
-): AncestorEntry[] {
+export function findAncestorChain(project: EsphomeProject, widgetId: WidgetId): AncestorEntry[] {
   for (const page of project.pages) {
     const chain: AncestorEntry[] = [{ widget: null, page, id: null, label: page.id }];
     if (walk(page.widgets, widgetId, chain, page)) return chain;
@@ -46,6 +43,6 @@ function walk(
  * index so the segment still disambiguates.
  */
 function labelFor(w: LvglWidget, index: number): string {
-  const declaredId = typeof w.props.id === 'string' ? (w.props.id as string) : undefined;
+  const declaredId = typeof w.props.id === 'string' ? w.props.id : undefined;
   return declaredId ?? `${w.type}[${index}]`;
 }

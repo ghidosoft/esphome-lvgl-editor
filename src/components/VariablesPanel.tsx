@@ -19,7 +19,7 @@ interface Props {
  * `varOverrides` on the editor store and flushed by the top-level Save flow.
  */
 export function VariablesPanel({ project }: Props) {
-  const substitutions = project.substitutions ?? {};
+  const substitutions = useMemo(() => project.substitutions ?? {}, [project.substitutions]);
   const setSelected = useEditorStore((s) => s.setSelected);
   const varOverrides = useEditorStore((s) => s.varOverrides);
   const updateVar = useEditorStore((s) => s.updateVar);
@@ -61,10 +61,14 @@ export function VariablesPanel({ project }: Props) {
               hasOverride={hasOverride}
               onChange={(v) => updateVar(name, v === entry.value ? undefined : v)}
               onRevert={() => updateVar(name, undefined)}
-              onJump={jumpTarget(entry.usages) != null ? () => {
-                const id = jumpTarget(entry.usages);
-                if (id) setSelected(id);
-              } : undefined}
+              onJump={
+                jumpTarget(entry.usages) != null
+                  ? () => {
+                      const id = jumpTarget(entry.usages);
+                      if (id) setSelected(id);
+                    }
+                  : undefined
+              }
             />
           );
         })}
@@ -101,7 +105,9 @@ function VarRow({
   return (
     <div className={`var-row ${hasOverride ? 'var-row--dirty' : ''}`}>
       <div className="var-row__name">
-        ${'{'}{name}{'}'}
+        ${'{'}
+        {name}
+        {'}'}
         {hasOverride && <span className="prop-row__dirty-dot" title="unsaved change" />}
       </div>
       <div className="var-row__control">
@@ -122,13 +128,20 @@ function VarRow({
           className="prop-input"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => { if (draft !== value) onChange(draft); }}
+          onBlur={() => {
+            if (draft !== value) onChange(draft);
+          }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
+            if (e.key === 'Enter') e.currentTarget.blur();
           }}
         />
         {hasOverride && (
-          <button type="button" className="prop-row__revert" title="Revert to source" onClick={onRevert}>
+          <button
+            type="button"
+            className="prop-row__revert"
+            title="Revert to source"
+            onClick={onRevert}
+          >
             ↺
           </button>
         )}

@@ -32,9 +32,7 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const { hAlign, vAlign } = decomposeAlign(align);
   c.textAlign = hAlign;
   const xPos =
-    hAlign === 'right' ? box.x + box.width :
-    hAlign === 'center' ? box.x + box.width / 2 :
-    box.x;
+    hAlign === 'right' ? box.x + box.width : hAlign === 'center' ? box.x + box.width / 2 : box.x;
   // Two different heights at play:
   //  - lineHeight (ascent+descent): matches LVGL's `font.line_height`, used for
   //    SIZE_CONTENT and the returned hit-test rect.
@@ -46,9 +44,11 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const lineHeight = fontHeight(c);
   const emSize = parseEmSize(font);
   const yPos =
-    vAlign === 'bottom' ? box.y + box.height - emSize :
-    vAlign === 'middle' ? box.y + (box.height - emSize) / 2 :
-    box.y;
+    vAlign === 'bottom'
+      ? box.y + box.height - emSize
+      : vAlign === 'middle'
+        ? box.y + (box.height - emSize) / 2
+        : box.y;
 
   c.fillText(text, xPos, yPos);
 
@@ -60,28 +60,45 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   c.restore();
 
   const contentX =
-    hAlign === 'right' ? xPos - measuredWidth :
-    hAlign === 'center' ? xPos - measuredWidth / 2 :
-    xPos;
+    hAlign === 'right'
+      ? xPos - measuredWidth
+      : hAlign === 'center'
+        ? xPos - measuredWidth / 2
+        : xPos;
   const drawnY =
-    vAlign === 'bottom' ? box.y + box.height - lineHeight :
-    vAlign === 'middle' ? box.y + (box.height - lineHeight) / 2 :
-    box.y;
+    vAlign === 'bottom'
+      ? box.y + box.height - lineHeight
+      : vAlign === 'middle'
+        ? box.y + (box.height - lineHeight) / 2
+        : box.y;
   return { x: contentX, y: drawnY, width: measuredWidth, height: lineHeight };
 }
 
-function decomposeAlign(align: string): { hAlign: 'left' | 'center' | 'right'; vAlign: 'top' | 'middle' | 'bottom' } {
+function decomposeAlign(align: string): {
+  hAlign: 'left' | 'center' | 'right';
+  vAlign: 'top' | 'middle' | 'bottom';
+} {
   switch (align) {
-    case 'TOP_LEFT': return { hAlign: 'left', vAlign: 'top' };
-    case 'TOP_MID': return { hAlign: 'center', vAlign: 'top' };
-    case 'TOP_RIGHT': return { hAlign: 'right', vAlign: 'top' };
-    case 'BOTTOM_LEFT': return { hAlign: 'left', vAlign: 'bottom' };
-    case 'BOTTOM_MID': return { hAlign: 'center', vAlign: 'bottom' };
-    case 'BOTTOM_RIGHT': return { hAlign: 'right', vAlign: 'bottom' };
-    case 'LEFT_MID': return { hAlign: 'left', vAlign: 'middle' };
-    case 'RIGHT_MID': return { hAlign: 'right', vAlign: 'middle' };
-    case 'CENTER': return { hAlign: 'center', vAlign: 'middle' };
-    default: return { hAlign: 'left', vAlign: 'top' };
+    case 'TOP_LEFT':
+      return { hAlign: 'left', vAlign: 'top' };
+    case 'TOP_MID':
+      return { hAlign: 'center', vAlign: 'top' };
+    case 'TOP_RIGHT':
+      return { hAlign: 'right', vAlign: 'top' };
+    case 'BOTTOM_LEFT':
+      return { hAlign: 'left', vAlign: 'bottom' };
+    case 'BOTTOM_MID':
+      return { hAlign: 'center', vAlign: 'bottom' };
+    case 'BOTTOM_RIGHT':
+      return { hAlign: 'right', vAlign: 'bottom' };
+    case 'LEFT_MID':
+      return { hAlign: 'left', vAlign: 'middle' };
+    case 'RIGHT_MID':
+      return { hAlign: 'right', vAlign: 'middle' };
+    case 'CENTER':
+      return { hAlign: 'center', vAlign: 'middle' };
+    default:
+      return { hAlign: 'left', vAlign: 'top' };
   }
 }
 

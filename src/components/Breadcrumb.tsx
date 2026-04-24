@@ -25,7 +25,11 @@ export function Breadcrumb({ project, widgetId }: Props) {
         const isPage = entry.id == null;
         return (
           <span key={`${entry.id ?? 'page'}-${i}`} className="breadcrumb__row">
-            {i > 0 && <span className="breadcrumb__sep" aria-hidden>›</span>}
+            {i > 0 && (
+              <span className="breadcrumb__sep" aria-hidden>
+                ›
+              </span>
+            )}
             <button
               type="button"
               className={

@@ -44,7 +44,10 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
     [project, widgetOverrides, varOverrides, widgetDeletions, styleOverrides, styleDeletions],
   );
 
-  const dirtyWidgetIds = new Set([...Object.keys(widgetOverrides), ...Object.keys(widgetDeletions)]);
+  const dirtyWidgetIds = new Set([
+    ...Object.keys(widgetOverrides),
+    ...Object.keys(widgetDeletions),
+  ]);
   const dirtyStyleIds = new Set([...Object.keys(styleOverrides), ...Object.keys(styleDeletions)]);
   const widgetCount = dirtyWidgetIds.size;
   const styleCount = dirtyStyleIds.size;
@@ -75,7 +78,7 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         if (!hasAnything) return;
         e.preventDefault();
-        doSave();
+        void doSave();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -116,12 +119,20 @@ export function SaveBar({ project, projectName, onSaved }: Props) {
         <button
           type="button"
           className="save-bar__discard"
-          onClick={() => { clearOverrides(); setSaveError(null); }}
+          onClick={() => {
+            clearOverrides();
+            setSaveError(null);
+          }}
           disabled={saving}
         >
           Discard
         </button>
-        <button type="button" className="save-bar__save" onClick={doSave} disabled={saving || ops.length === 0}>
+        <button
+          type="button"
+          className="save-bar__save"
+          onClick={void doSave}
+          disabled={saving || ops.length === 0}
+        >
           {saving ? 'Saving…' : `Save (${ops.length})`}
         </button>
       </div>

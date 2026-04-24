@@ -15,12 +15,17 @@ export function useProjects(): {
   const refetch = useCallback(() => {
     setLoading(true);
     fetchProjects()
-      .then((d) => { setData(d); setError(null); })
+      .then((d) => {
+        setData(d);
+        setError(null);
+      })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { refetch(); }, [refetch]);
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
   useHmrReload(refetch);
 
   return { data, error, loading };

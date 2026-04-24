@@ -69,16 +69,19 @@ export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
 
 interface PartStyle {
   fill: string;
-  fillOpa: number;    // 0..1
+  fillOpa: number; // 0..1
   borderColor: string;
   borderWidth: number;
-  borderOpa: number;  // 0..1
+  borderOpa: number; // 0..1
   radius: number;
 }
 
 function fillRect(
   c: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
   s: PartStyle,
 ) {
   const r = Math.min(s.radius, w / 2, h / 2);
@@ -96,7 +99,9 @@ function fillRect(
 
 function partBag(w: LvglWidget, key: string): Record<string, unknown> | undefined {
   const v = w.props[key];
-  return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : undefined;
+  return v && typeof v === 'object' && !Array.isArray(v)
+    ? (v as Record<string, unknown>)
+    : undefined;
 }
 
 function num(v: unknown, fallback: number): number {

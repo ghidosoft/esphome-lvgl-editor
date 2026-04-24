@@ -17,7 +17,7 @@ interface Props {
  * widget-side wiring.
  */
 export function StylesPanel({ project }: Props) {
-  const styles = project.styles ?? {};
+  const styles = useMemo(() => project.styles ?? {}, [project.styles]);
   const styleSources = project.styleSources ?? {};
   const styleOverridesMap = useEditorStore((s) => s.styleOverrides);
   const styleDeletionsMap = useEditorStore((s) => s.styleDeletions);
@@ -91,7 +91,10 @@ function StyleSection({
 }: {
   styleId: string;
   props: Record<string, unknown>;
-  sources?: { self: { file: string; yamlPath: (string | number)[] }; props: Record<string, PropSource> };
+  sources?: {
+    self: { file: string; yamlPath: (string | number)[] };
+    props: Record<string, PropSource>;
+  };
   varOverrides: Record<string, string>;
   overrides: Record<string, unknown>;
   pendingDeletions: string[];
@@ -139,7 +142,9 @@ function StyleSection({
             disabled ? 'prop-row--disabled' : '',
             pendingDelete ? 'prop-row--pending-delete' : '',
             !existsNow && !hasOverride ? 'prop-row--unset' : '',
-          ].join(' ').trim();
+          ]
+            .join(' ')
+            .trim();
 
           return (
             <div key={entry.key} className={rowClass}>
@@ -156,7 +161,12 @@ function StyleSection({
                   disabled={disabled}
                 />
                 {hasOverride && (
-                  <button type="button" className="prop-row__btn" title="Revert to source" onClick={() => onRevert(entry.key)}>
+                  <button
+                    type="button"
+                    className="prop-row__btn"
+                    title="Revert to source"
+                    onClick={() => onRevert(entry.key)}
+                  >
                     ↺
                   </button>
                 )}
@@ -178,10 +188,16 @@ function StyleSection({
               )}
               {source?.viaVariable && !pendingDelete && (
                 <div className="prop-row__banner prop-row__banner--var">
-                  Bound to <code>${'{'}{source.viaVariable}{'}'}</code>
+                  Bound to{' '}
+                  <code>
+                    ${'{'}
+                    {source.viaVariable}
+                    {'}'}
+                  </code>
                   {project.substitutions?.[source.viaVariable] && (
                     <>
-                      {' · '}edit affects {project.substitutions[source.viaVariable].usages.length} place
+                      {' · '}edit affects {project.substitutions[source.viaVariable].usages.length}{' '}
+                      place
                       {project.substitutions[source.viaVariable].usages.length === 1 ? '' : 's'}
                     </>
                   )}
@@ -202,7 +218,11 @@ function StyleSection({
                 <div key={k} className="prop-row prop-row--readonly">
                   <div className="prop-row__key">{k}</div>
                   <div className="prop-row__value">
-                    {isOpaqueTag(v) ? <span className="prop-row__opaque">{v.__tag}</span> : <span>{formatValue(v)}</span>}
+                    {isOpaqueTag(v) ? (
+                      <span className="prop-row__opaque">{v.__tag}</span>
+                    ) : (
+                      <span>{formatValue(v)}</span>
+                    )}
                   </div>
                 </div>
               );

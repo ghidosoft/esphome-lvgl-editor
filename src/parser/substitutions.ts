@@ -1,6 +1,12 @@
 import type { ParseError } from './types';
 import { isOpaqueTag } from './types';
-import { isOriginLeaf, stampOrigin, readOrigin, type OriginNode, type OriginLeaf } from './sourceMap';
+import {
+  isOriginLeaf,
+  stampOrigin,
+  readOrigin,
+  type OriginNode,
+  type OriginLeaf,
+} from './sourceMap';
 
 const VAR_RE = /\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
 /** Matches a scalar that is exactly one `${var}` and nothing else. */
@@ -29,18 +35,23 @@ export function applySubstitutions(
     const outPlain: unknown[] = [];
     const outOrigin: OriginNode[] = [];
     for (let i = 0; i < plain.length; i++) {
-      const child = applySubstitutions(plain[i], originArr[i] ?? fallbackLeaf(origin, i), subs, errors);
+      const child = applySubstitutions(
+        plain[i],
+        originArr[i] ?? fallbackLeaf(origin, i),
+        subs,
+        errors,
+      );
       outPlain.push(child.plain);
       outOrigin.push(child.origin);
     }
-    const containerOrigin = readOrigin(origin as object);
+    const containerOrigin = readOrigin(origin);
     if (containerOrigin) stampOrigin(outOrigin, containerOrigin);
     return { plain: outPlain, origin: outOrigin };
   }
   if (plain && typeof plain === 'object' && !isOpaqueTag(plain)) {
     const originMap =
       origin && typeof origin === 'object' && !Array.isArray(origin) && !isOriginLeaf(origin)
-        ? (origin as Record<string, OriginNode>)
+        ? origin
         : {};
     const outPlain: Record<string, unknown> = {};
     const outOrigin: Record<string, OriginNode> = {};
@@ -49,7 +60,7 @@ export function applySubstitutions(
       outPlain[k] = child.plain;
       outOrigin[k] = child.origin;
     }
-    const containerOrigin = readOrigin(origin as object);
+    const containerOrigin = readOrigin(origin);
     if (containerOrigin) stampOrigin(outOrigin, containerOrigin);
     return { plain: outPlain, origin: outOrigin };
   }
@@ -63,16 +74,18 @@ function applyToString(
   errors: ParseError[],
 ): { plain: string; origin: OriginLeaf } {
   const pure = value.match(PURE_VAR_RE);
-  const leaf: OriginLeaf = isOriginLeaf(origin)
-    ? { ...origin }
-    : { file: '', yamlPath: [] };
+  const leaf: OriginLeaf = isOriginLeaf(origin) ? { ...origin } : { file: '', yamlPath: [] };
 
   if (pure) {
     const name = pure[1];
     if (name in subs) {
       return { plain: subs[name], origin: { ...leaf, viaVariable: name } };
     }
-    errors.push({ kind: 'SubstitutionMissing', message: `unknown substitution \${${name}}`, variable: name });
+    errors.push({
+      kind: 'SubstitutionMissing',
+      message: `unknown substitution \${${name}}`,
+      variable: name,
+    });
     return { plain: value, origin: { ...leaf, viaVariable: name } };
   }
 
@@ -80,7 +93,11 @@ function applyToString(
   const replaced = value.replace(VAR_RE, (match, name) => {
     hasMatch = true;
     if (name in subs) return subs[name];
-    errors.push({ kind: 'SubstitutionMissing', message: `unknown substitution \${${name}}`, variable: name });
+    errors.push({
+      kind: 'SubstitutionMissing',
+      message: `unknown substitution \${${name}}`,
+      variable: name,
+    });
     return match;
   });
 
@@ -93,7 +110,7 @@ function applyToString(
 /** When an origin branch is missing (e.g. default-filled plain value), synthesize
  * a leaf that inherits the nearest container's origin. Keeps the tree walkable. */
 function fallbackLeaf(origin: OriginNode, segment: string | number): OriginLeaf {
-  const containerOrigin = readOrigin(origin as object);
+  const containerOrigin = readOrigin(origin);
   if (containerOrigin) {
     return { file: containerOrigin.file, yamlPath: [...containerOrigin.yamlPath, segment] };
   }

@@ -16,16 +16,31 @@ export function App() {
   return (
     <div className="app">
       <Routes>
-        <Route path="/" element={<HomeRedirect projects={projects.data ?? []} loading={projects.loading} />} />
+        <Route
+          path="/"
+          element={<HomeRedirect projects={projects.data ?? []} loading={projects.loading} />}
+        />
         <Route path="/project/:name" element={<ProjectShell projects={projects.data ?? []} />} />
-        <Route path="/project/:name/page/:pageId" element={<ProjectShell projects={projects.data ?? []} />} />
-        <Route path="*" element={<HomeRedirect projects={projects.data ?? []} loading={projects.loading} />} />
+        <Route
+          path="/project/:name/page/:pageId"
+          element={<ProjectShell projects={projects.data ?? []} />}
+        />
+        <Route
+          path="*"
+          element={<HomeRedirect projects={projects.data ?? []} loading={projects.loading} />}
+        />
       </Routes>
     </div>
   );
 }
 
-function HomeRedirect({ projects, loading }: { projects: { name: string; hasLvgl: boolean }[]; loading: boolean }) {
+function HomeRedirect({
+  projects,
+  loading,
+}: {
+  projects: { name: string; hasLvgl: boolean }[];
+  loading: boolean;
+}) {
   if (loading) return <div className="loading">Loading projects…</div>;
   const first = projects.find((p) => p.hasLvgl);
   if (!first) {
@@ -79,7 +94,7 @@ function ProjectShell({ projects }: { projects: { name: string; hasLvgl: boolean
         {project.error && <div className="error">Error: {project.error}</div>}
         {derivedProject && !derivedProject.hasLvgl && (
           <div className="empty">
-            <code>{name}</code> doesn't define an <code>lvgl:</code> block.
+            <code>{name}</code> doesn&apos;t define an <code>lvgl:</code> block.
           </div>
         )}
         {derivedProject && derivedProject.hasLvgl && activePage && (
@@ -87,12 +102,19 @@ function ProjectShell({ projects }: { projects: { name: string; hasLvgl: boolean
             <CanvasView project={derivedProject} page={activePage} />
           </DeviceFrame>
         )}
-        {derivedProject && derivedProject.hasLvgl && !activePage && derivedProject.pages.length === 0 && (
-          <div className="empty">No pages defined.</div>
+        {derivedProject &&
+          derivedProject.hasLvgl &&
+          !activePage &&
+          derivedProject.pages.length === 0 && <div className="empty">No pages defined.</div>}
+        {derivedProject && (
+          <SaveBar project={derivedProject} projectName={name} onSaved={project.refetch} />
         )}
-        {derivedProject && <SaveBar project={derivedProject} projectName={name} onSaved={project.refetch} />}
       </main>
-      {derivedProject ? <EditorPanel project={derivedProject} /> : <aside className="editor-panel" />}
+      {derivedProject ? (
+        <EditorPanel project={derivedProject} />
+      ) : (
+        <aside className="editor-panel" />
+      )}
       <ErrorDrawer errors={derivedProject?.errors ?? []} />
     </>
   );

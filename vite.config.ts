@@ -10,10 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ESPHOME_DIR = resolve(__dirname, '../home-assistant/esphome');
 
 export default defineConfig({
-  plugins: [
-    react(),
-    lvglPlugin({ esphomeDir: ESPHOME_DIR }),
-  ],
+  plugins: [react(), lvglPlugin({ esphomeDir: ESPHOME_DIR })],
   resolve: {
     alias: { '@': resolve(__dirname, 'src') },
   },

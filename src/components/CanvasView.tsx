@@ -28,7 +28,10 @@ export function CanvasView({ project, page }: CanvasViewProps) {
     stage.onHitList(setHitList);
     stageRef.current = stage;
     if (canvasRef.current) stage.attach(canvasRef.current);
-    return () => { stage.detach(); stageRef.current = null; };
+    return () => {
+      stage.detach();
+      stageRef.current = null;
+    };
   }, [setHitList]);
 
   useEffect(() => {

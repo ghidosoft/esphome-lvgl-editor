@@ -19,7 +19,9 @@ import type { OpaqueTag } from './types';
  * needs. Providing a custom `stringify` here forced every tagged scalar
  * inline and destroyed `!lambda |-` multi-line bodies.
  */
-const ESPHOME_TAGS: Array<ScalarTag | CollectionTag> = (['!include', '!secret', '!lambda'] as const).map(
+const ESPHOME_TAGS: Array<ScalarTag | CollectionTag> = (
+  ['!include', '!secret', '!lambda'] as const
+).map(
   (tag): ScalarTag => ({
     tag,
     resolve: (value: string) => value,

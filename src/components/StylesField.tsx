@@ -52,15 +52,19 @@ export function StylesField({
             type="button"
             key={id}
             className="styles-field__chip"
-            title={project.styleSources?.[id] ? `Defined in ${shortFile(project.styleSources[id].self.file)}` : undefined}
+            title={
+              project.styleSources?.[id]
+                ? `Defined in ${shortFile(project.styleSources[id].self.file)}`
+                : undefined
+            }
             onClick={() => remove(id)}
           >
             {id}
             <span className="styles-field__chip-x">×</span>
           </button>
         ))}
-        {addable.length > 0 && (
-          adding ? (
+        {addable.length > 0 &&
+          (adding ? (
             <select
               autoFocus
               className="prop-input styles-field__add-select"
@@ -68,26 +72,39 @@ export function StylesField({
               onBlur={() => setAdding(false)}
               defaultValue=""
             >
-              <option value="" disabled>pick a style…</option>
+              <option value="" disabled>
+                pick a style…
+              </option>
               {addable.map((id) => (
-                <option key={id} value={id}>{id}</option>
+                <option key={id} value={id}>
+                  {id}
+                </option>
               ))}
             </select>
           ) : (
             <button type="button" className="styles-field__add" onClick={() => setAdding(true)}>
               + add
             </button>
-          )
-        )}
+          ))}
         {hasOverride && (
-          <button type="button" className="prop-row__btn" title="Revert to source" onClick={onRevert}>
+          <button
+            type="button"
+            className="prop-row__btn"
+            title="Revert to source"
+            onClick={onRevert}
+          >
             ↺
           </button>
         )}
       </div>
       {source?.viaVariable && (
         <div className="prop-row__banner prop-row__banner--var">
-          Bound to <code>${'{'}{source.viaVariable}{'}'}</code>
+          Bound to{' '}
+          <code>
+            ${'{'}
+            {source.viaVariable}
+            {'}'}
+          </code>
           {sub && (
             <>
               {' · '}edit affects {sub.usages.length} place{sub.usages.length === 1 ? '' : 's'}

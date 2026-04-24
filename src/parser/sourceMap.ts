@@ -48,15 +48,18 @@ export function isOriginLeaf(node: unknown): node is OriginLeaf {
     typeof node === 'object' &&
     node !== null &&
     !Array.isArray(node) &&
-    'file' in (node as object) &&
-    'yamlPath' in (node as object) &&
+    'file' in node &&
+    'yamlPath' in node &&
     typeof (node as { file: unknown }).file === 'string' &&
     Array.isArray((node as { yamlPath: unknown }).yamlPath)
   );
 }
 
 /** Retrieve the origin node at a given path inside a parallel origin tree. */
-export function getOriginAt(root: OriginNode | undefined, path: (string | number)[]): OriginNode | undefined {
+export function getOriginAt(
+  root: OriginNode | undefined,
+  path: (string | number)[],
+): OriginNode | undefined {
   if (!root) return undefined;
   let cur: OriginNode | undefined = root;
   for (const segment of path) {
@@ -65,7 +68,7 @@ export function getOriginAt(root: OriginNode | undefined, path: (string | number
       if (typeof segment !== 'number') return undefined;
       cur = cur[segment];
     } else if (typeof cur === 'object' && !isOriginLeaf(cur)) {
-      cur = (cur as Record<string, OriginNode>)[String(segment)];
+      cur = cur[String(segment)];
     } else {
       return undefined;
     }

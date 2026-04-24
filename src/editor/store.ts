@@ -281,7 +281,6 @@ function applyStylePatches(
   return out;
 }
 
-
 function overridePage(
   page: LvglPage,
   overrides: Record<WidgetId, Record<string, unknown>>,
@@ -297,9 +296,10 @@ function overrideWidget(
 ): LvglWidget {
   const patch = widget.widgetId ? overrides[widget.widgetId] : undefined;
   const del = widget.widgetId ? deletions[widget.widgetId] : undefined;
-  const nextChildren = widget.children.length > 0
-    ? widget.children.map((c) => overrideWidget(c, overrides, deletions))
-    : widget.children;
+  const nextChildren =
+    widget.children.length > 0
+      ? widget.children.map((c) => overrideWidget(c, overrides, deletions))
+      : widget.children;
   if (!patch && (!del || del.length === 0) && nextChildren === widget.children) return widget;
 
   let nextProps = widget.props;
@@ -314,16 +314,19 @@ function overrideWidget(
     nextProps = { ...widget.props };
     for (const [key, value] of Object.entries(propPatch)) {
       const path = splitKey(key);
-      nextProps = path.length === 1
-        ? { ...nextProps, [path[0]]: value }
-        : setNested(nextProps, path, value);
+      nextProps =
+        path.length === 1 ? { ...nextProps, [path[0]]: value } : setNested(nextProps, path, value);
     }
     if (del) {
       for (const key of del) {
         const path = splitKey(key);
-        nextProps = path.length === 1
-          ? (() => { const { [path[0]]: _, ...rest } = nextProps; return rest; })()
-          : deleteNested(nextProps, path);
+        nextProps =
+          path.length === 1
+            ? (() => {
+                const { [path[0]]: _, ...rest } = nextProps;
+                return rest;
+              })()
+            : deleteNested(nextProps, path);
       }
     }
     if (styleOverride !== undefined) {

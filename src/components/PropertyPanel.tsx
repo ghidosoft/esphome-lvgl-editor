@@ -2,7 +2,13 @@ import type { ReactNode } from 'react';
 import type { EsphomeProject, LvglWidget, PropSource, WidgetId } from '../parser/types';
 import { isOpaqueTag } from '../parser/types';
 import { useEditorStore } from '../editor/store';
-import { getSchema, isGroup, type SchemaEntry, type SchemaGroup, type SchemaItem } from '../editor/schema';
+import {
+  getSchema,
+  isGroup,
+  type SchemaEntry,
+  type SchemaGroup,
+  type SchemaItem,
+} from '../editor/schema';
 import { getNested, splitKey } from '../editor/nestedKey';
 import { PropControl } from './PropControl';
 import { StylesField } from './StylesField';
@@ -123,7 +129,11 @@ export function PropertyPanel({ project }: Props) {
             key={key}
             label={key}
             value={formatValue(widget.props[key])}
-            opaque={isOpaqueTag(widget.props[key]) ? (widget.props[key] as { __tag: string }).__tag : undefined}
+            opaque={
+              isOpaqueTag(widget.props[key])
+                ? (widget.props[key] as { __tag: string }).__tag
+                : undefined
+            }
             source={sources.props[key]}
           />
         ))}
@@ -151,9 +161,7 @@ function GroupSection({
     <div className="prop-group">
       <div className="prop-group__header">{group.label ?? group.key}</div>
       <div className="prop-group__rows">
-        {group.entries.map((child) =>
-          renderRow({ ...child, key: `${group.key}.${child.key}` }),
-        )}
+        {group.entries.map((child) => renderRow({ ...child, key: `${group.key}.${child.key}` }))}
       </div>
     </div>
   );
@@ -198,7 +206,9 @@ function EditableRow({
     disabled ? 'prop-row--disabled' : '',
     pendingDelete ? 'prop-row--pending-delete' : '',
     !existsNow && !hasOverride ? 'prop-row--unset' : '',
-  ].join(' ').trim();
+  ]
+    .join(' ')
+    .trim();
 
   return (
     <div className={rowClass}>
@@ -210,7 +220,12 @@ function EditableRow({
       <div className="prop-row__control">
         <PropControl entry={entry} value={value} onChange={onChange} disabled={disabled} />
         {hasOverride && (
-          <button type="button" className="prop-row__btn" title="Revert to source" onClick={onRevert}>
+          <button
+            type="button"
+            className="prop-row__btn"
+            title="Revert to source"
+            onClick={onRevert}
+          >
             ↺
           </button>
         )}
@@ -232,7 +247,12 @@ function EditableRow({
       )}
       {source?.viaVariable && !pendingDelete && (
         <div className="prop-row__banner prop-row__banner--var">
-          Bound to <code>${'{'}{source.viaVariable}{'}'}</code>
+          Bound to{' '}
+          <code>
+            ${'{'}
+            {source.viaVariable}
+            {'}'}
+          </code>
           {sub && (
             <>
               {' · '}edit affects {sub.usages.length} place{sub.usages.length === 1 ? '' : 's'}

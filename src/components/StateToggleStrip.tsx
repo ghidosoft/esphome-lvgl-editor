@@ -31,7 +31,9 @@ export function StateToggleStrip({ widget, activeState, onChange }: Props) {
               'state-strip__pill',
               active ? 'state-strip__pill--active' : '',
               defined ? '' : 'state-strip__pill--empty',
-            ].join(' ').trim()}
+            ]
+              .join(' ')
+              .trim()}
             aria-pressed={active}
             title={
               defined
@@ -52,10 +54,5 @@ export function StateToggleStrip({ widget, activeState, onChange }: Props) {
 
 function hasStateBlock(widget: LvglWidget, key: string): boolean {
   const v = widget.props[key];
-  return (
-    !!v &&
-    typeof v === 'object' &&
-    !Array.isArray(v) &&
-    Object.keys(v as Record<string, unknown>).length > 0
-  );
+  return !!v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0;
 }

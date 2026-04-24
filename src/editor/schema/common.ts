@@ -2,13 +2,27 @@ import type { PropertySchema, SchemaEntry } from './index';
 
 /** LVGL alignment anchors accepted by the `align:` property. */
 export const ALIGN_VALUES = [
-  'TOP_LEFT', 'TOP_MID', 'TOP_RIGHT',
-  'LEFT_MID', 'CENTER', 'RIGHT_MID',
-  'BOTTOM_LEFT', 'BOTTOM_MID', 'BOTTOM_RIGHT',
-  'OUT_TOP_LEFT', 'OUT_TOP_MID', 'OUT_TOP_RIGHT',
-  'OUT_BOTTOM_LEFT', 'OUT_BOTTOM_MID', 'OUT_BOTTOM_RIGHT',
-  'OUT_LEFT_TOP', 'OUT_LEFT_MID', 'OUT_LEFT_BOTTOM',
-  'OUT_RIGHT_TOP', 'OUT_RIGHT_MID', 'OUT_RIGHT_BOTTOM',
+  'TOP_LEFT',
+  'TOP_MID',
+  'TOP_RIGHT',
+  'LEFT_MID',
+  'CENTER',
+  'RIGHT_MID',
+  'BOTTOM_LEFT',
+  'BOTTOM_MID',
+  'BOTTOM_RIGHT',
+  'OUT_TOP_LEFT',
+  'OUT_TOP_MID',
+  'OUT_TOP_RIGHT',
+  'OUT_BOTTOM_LEFT',
+  'OUT_BOTTOM_MID',
+  'OUT_BOTTOM_RIGHT',
+  'OUT_LEFT_TOP',
+  'OUT_LEFT_MID',
+  'OUT_LEFT_BOTTOM',
+  'OUT_RIGHT_TOP',
+  'OUT_RIGHT_MID',
+  'OUT_RIGHT_BOTTOM',
 ];
 
 /**

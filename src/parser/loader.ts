@@ -21,7 +21,10 @@ import type { EsphomeProject, ParseError, YamlPath } from './types';
  *   5. apply substitutions; mark single `${var}` scalars with viaVariable
  *   6. normalize into typed AST; populate project.sources + project.substitutions
  */
-export function loadProject(mainPath: string, registry: FileRegistry = new FileRegistry()): EsphomeProject {
+export function loadProject(
+  mainPath: string,
+  registry: FileRegistry = new FileRegistry(),
+): EsphomeProject {
   const errors: ParseError[] = [];
   const name = basename(mainPath, extname(mainPath));
   const seen = new Set<string>();
@@ -39,25 +42,26 @@ export function loadProject(mainPath: string, registry: FileRegistry = new FileR
       pages: [],
       errors: [
         ...errors,
-        { kind: 'ProjectLoadError', message: 'main YAML did not parse to an object', path: mainPath },
+        {
+          kind: 'ProjectLoadError',
+          message: 'main YAML did not parse to an object',
+          path: mainPath,
+        },
       ],
       files: registry.allPaths(),
     };
   }
 
-  const merged = mergePackages(
-    loaded.plain as Record<string, unknown>,
-    loaded.origin as Record<string, OriginNode>,
-  );
+  const merged = mergePackages(loaded.plain, loaded.origin as Record<string, OriginNode>);
 
-  const subs = normalizeSubsMap((merged.plain as Record<string, unknown>).substitutions);
+  const subs = normalizeSubsMap(merged.plain.substitutions);
   const substituted = applySubstitutions(merged.plain, merged.origin, subs, errors);
 
   return normalizeProject({
     name,
     sourcePath: mainPath,
     doc: substituted.plain as Record<string, unknown>,
-    origin: substituted.origin as OriginNode,
+    origin: substituted.origin,
     subs,
     subsOrigin: findSubstitutionsOrigin(merged.origin),
     errors,
@@ -135,7 +139,7 @@ export function loadAndResolve(
 
   registry.register({ path: absolute, doc, mtime, raw: source });
 
-  const result = walkNode(doc.contents as Node | null, absolute, dirname(absolute), [], errors, seen, registry);
+  const result = walkNode(doc.contents, absolute, dirname(absolute), [], errors, seen, registry);
   seen.delete(absolute);
   return result;
 }
@@ -172,7 +176,7 @@ function walkNode(
   }
 
   if (isScalar(node)) {
-    return leaf(node.value as unknown, file, yamlPath);
+    return leaf(node.value, file, yamlPath);
   }
 
   if (isMap(node)) {
@@ -182,7 +186,15 @@ function walkNode(
       const keyNode = pair.key;
       const keyStr = isScalar(keyNode) ? String(keyNode.value) : String(keyNode);
       const childPath: YamlPath = [...yamlPath, keyStr];
-      const child = walkNode(pair.value as Node | null, file, baseDir, childPath, errors, seen, registry);
+      const child = walkNode(
+        pair.value as Node | null,
+        file,
+        baseDir,
+        childPath,
+        errors,
+        seen,
+        registry,
+      );
       plain[keyStr] = child.plain;
       origin[keyStr] = child.origin;
     }
@@ -207,7 +219,11 @@ function walkNode(
   return leaf((node as unknown as { value?: unknown }).value ?? null, file, yamlPath);
 }
 
-function leaf(value: unknown, file: string, yamlPath: YamlPath): { plain: unknown; origin: OriginLeaf } {
+function leaf(
+  value: unknown,
+  file: string,
+  yamlPath: YamlPath,
+): { plain: unknown; origin: OriginLeaf } {
   return { plain: value, origin: { file, yamlPath: [...yamlPath] } };
 }
 

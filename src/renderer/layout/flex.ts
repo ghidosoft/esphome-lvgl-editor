@@ -41,18 +41,26 @@ export function layoutFlex(
   let extraGap = 0;
   switch ((spec.flex_align_main ?? 'START').toUpperCase()) {
     case 'CENTER':
-      mainStart = free / 2; break;
+      mainStart = free / 2;
+      break;
     case 'END':
-      mainStart = free; break;
+      mainStart = free;
+      break;
     case 'SPACE_BETWEEN':
-      extraGap = childSizes.length > 1 ? free / (childSizes.length - 1) : 0; break;
+      extraGap = childSizes.length > 1 ? free / (childSizes.length - 1) : 0;
+      break;
     case 'SPACE_EVENLY':
-      extraGap = free / (childSizes.length + 1); mainStart = extraGap; break;
+      extraGap = free / (childSizes.length + 1);
+      mainStart = extraGap;
+      break;
     case 'SPACE_AROUND':
-      extraGap = free / childSizes.length; mainStart = extraGap / 2; break;
+      extraGap = free / childSizes.length;
+      mainStart = extraGap / 2;
+      break;
     case 'START':
     default:
-      mainStart = 0; break;
+      mainStart = 0;
+      break;
   }
 
   const slots: FlexSlot[] = [];

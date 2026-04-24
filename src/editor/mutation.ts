@@ -62,7 +62,9 @@ export function buildEditOps(
       // `styles` lives on WidgetPropSources.styles, not .props[] — it needs
       // its own routing and the value can be an array.
       if (propKey === 'styles') {
-        const list = Array.isArray(value) ? (value as unknown[]).filter((x) => typeof x === 'string') : [];
+        const list = Array.isArray(value)
+          ? (value as unknown[]).filter((x) => typeof x === 'string')
+          : [];
         const target = sources.styles ?? {
           file: sources.self.file,
           yamlPath: [...sources.self.yamlPath, sources.self.widgetType, 'styles'],
@@ -76,7 +78,7 @@ export function buildEditOps(
             op: 'set',
             file: target.file,
             yamlPath: target.yamlPath,
-            newValue: list.length === 1 ? (list[0] as string) : (list as string[]),
+            newValue: list.length === 1 ? list[0] : list,
           });
         }
         continue;
@@ -115,14 +117,19 @@ export function buildEditOps(
   for (const [widgetId, keys] of Object.entries(widgetDeletions)) {
     const sources = project.sources?.[widgetId];
     if (!sources) {
-      for (const key of keys) skipped.push({ widgetId, propKey: key, reason: 'no source map entry' });
+      for (const key of keys)
+        skipped.push({ widgetId, propKey: key, reason: 'no source map entry' });
       continue;
     }
     for (const key of keys) {
       const propSource = sources.props[key];
       if (!propSource) continue; // already absent — nothing to delete on disk
       if (propSource.viaVariable) {
-        skipped.push({ widgetId, propKey: key, reason: 'cannot remove a var-backed prop (P5 detach)' });
+        skipped.push({
+          widgetId,
+          propKey: key,
+          reason: 'cannot remove a var-backed prop (P5 detach)',
+        });
         continue;
       }
       ops.push({ op: 'delete', file: propSource.file, yamlPath: propSource.yamlPath });
@@ -172,14 +179,19 @@ export function buildEditOps(
   for (const [styleId, keys] of Object.entries(styleDeletions)) {
     const sources = project.styleSources?.[styleId];
     if (!sources) {
-      for (const key of keys) skipped.push({ styleId, propKey: key, reason: 'no source map entry' });
+      for (const key of keys)
+        skipped.push({ styleId, propKey: key, reason: 'no source map entry' });
       continue;
     }
     for (const key of keys) {
       const propSource = sources.props[key];
       if (!propSource) continue;
       if (propSource.viaVariable) {
-        skipped.push({ styleId, propKey: key, reason: 'cannot remove a var-backed prop (P5 detach)' });
+        skipped.push({
+          styleId,
+          propKey: key,
+          reason: 'cannot remove a var-backed prop (P5 detach)',
+        });
         continue;
       }
       ops.push({ op: 'delete', file: propSource.file, yamlPath: propSource.yamlPath });

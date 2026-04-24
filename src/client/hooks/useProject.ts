@@ -14,15 +14,27 @@ export function useProject(name: string | undefined): {
   const [loading, setLoading] = useState(false);
 
   const refetch = useCallback(() => {
-    if (!name) { setData(null); setError(null); return; }
+    if (!name) {
+      setData(null);
+      setError(null);
+      return;
+    }
     setLoading(true);
     fetchProject(name)
-      .then((d) => { setData(d); setError(null); })
-      .catch((e: Error) => { setData(null); setError(e.message); })
+      .then((d) => {
+        setData(d);
+        setError(null);
+      })
+      .catch((e: Error) => {
+        setData(null);
+        setError(e.message);
+      })
       .finally(() => setLoading(false));
   }, [name]);
 
-  useEffect(() => { refetch(); }, [refetch]);
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
   useHmrReload(refetch);
 
   return { data, error, loading, refetch };

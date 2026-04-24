@@ -164,7 +164,12 @@ function renderWidget(
       const grid = buildGrid(widget.layout.spec, { width: inner.width, height: inner.height });
       for (const child of widget.children) {
         const cell = grid.cellFor(child);
-        const slot: Box = { x: inner.x + cell.x, y: inner.y + cell.y, width: cell.width, height: cell.height };
+        const slot: Box = {
+          x: inner.x + cell.x,
+          y: inner.y + cell.y,
+          width: cell.width,
+          height: cell.height,
+        };
         renderWidget(child, inner, slot, ctx, hits, depth + 1);
       }
       return;
@@ -175,7 +180,11 @@ function renderWidget(
       // percentages) before handing them to the flex engine — it doesn't know
       // how to expand those on its own.
       const childSizes = widget.children.map((child) => resolveChildSize(child, inner, ctx));
-      const slots = layoutFlex(widget.layout.spec, { width: inner.width, height: inner.height }, childSizes);
+      const slots = layoutFlex(
+        widget.layout.spec,
+        { width: inner.width, height: inner.height },
+        childSizes,
+      );
       for (let i = 0; i < widget.children.length; i++) {
         const s = slots[i];
         const slot: Box = { x: inner.x + s.x, y: inner.y + s.y, width: s.width, height: s.height };

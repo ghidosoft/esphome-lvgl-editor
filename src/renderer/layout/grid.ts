@@ -12,7 +12,11 @@ export interface GridCell {
  * dimensions. `content`-sized tracks are treated like fr(1) for now (we don't
  * have child measurements at this stage; ESPHome typically uses fr or fixed).
  */
-export function computeTracks(tracks: TrackSize[], total: number, gap: number): { offsets: number[]; sizes: number[] } {
+export function computeTracks(
+  tracks: TrackSize[],
+  total: number,
+  gap: number,
+): { offsets: number[]; sizes: number[] } {
   if (tracks.length === 0) return { offsets: [], sizes: [] };
   const totalGap = gap * Math.max(0, tracks.length - 1);
   let fixedSum = 0;
@@ -48,7 +52,10 @@ export interface ResolvedGrid {
  * Build a resolver that, given a child widget, returns its grid cell rect
  * within the parent's inner content box (i.e. local origin (0,0)).
  */
-export function buildGrid(spec: GridLayoutSpec, parentInner: { width: number; height: number }): ResolvedGrid {
+export function buildGrid(
+  spec: GridLayoutSpec,
+  parentInner: { width: number; height: number },
+): ResolvedGrid {
   const cols = computeTracks(spec.columns, parentInner.width, spec.pad_column ?? 0);
   const rows = computeTracks(spec.rows, parentInner.height, spec.pad_row ?? 0);
 
@@ -66,10 +73,8 @@ export function buildGrid(spec: GridLayoutSpec, parentInner: { width: number; he
 
       const x = cols.offsets[colStart];
       const y = rows.offsets[rowStart];
-      const width =
-        cols.offsets[colEnd] + cols.sizes[colEnd] - x;
-      const height =
-        rows.offsets[rowEnd] + rows.sizes[rowEnd] - y;
+      const width = cols.offsets[colEnd] + cols.sizes[colEnd] - x;
+      const height = rows.offsets[rowEnd] + rows.sizes[rowEnd] - y;
 
       return { x, y, width, height };
     },
