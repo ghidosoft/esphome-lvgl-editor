@@ -3,6 +3,25 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Web preview & visual editor for ESPHome LVGL configs.",
+  "author": "Andrea Ghidini <looptribe@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ghidosoft/esphome-lvgl-editor#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghidosoft/esphome-lvgl-editor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ghidosoft/esphome-lvgl-editor/issues"
+  },
+  "keywords": [
+    "esphome",
+    "lvgl",
+    "preview",
+    "editor",
+    "yaml",
+    "home-assistant",
+    "embedded"
+  ],
   "bin": {
     "esphome-lvgl-editor": "bin/cli.mjs"
   },
