@@ -11,6 +11,8 @@ export interface EsphomeProject {
   fonts: Record<string, FontSpec>;
   images: Record<string, ImageSpec>;
   styles: Record<string, StyleSpec>;
+  /** Top-level `lvgl.theme:` settings. `darkMode` switches the default theme palette. */
+  theme: { darkMode: boolean };
   pages: LvglPage[];
   errors: ParseError[];
   /** Source-map layer for round-trip editing. Undefined when loader doesn't build it. */

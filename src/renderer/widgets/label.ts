@@ -10,15 +10,16 @@ import { resolveProp } from '../styles';
  */
 export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const styles = ctx.project.styles;
-  const text = String(resolveProp(w, 'text', styles) ?? '');
+  const theme = ctx.theme;
+  const text = String(resolveProp(w, 'text', styles, theme) ?? '');
   if (text === '') return box;
 
-  const color = parseColor(resolveProp(w, 'text_color', styles), '#ffffff');
-  const opa = parseOpacity(resolveProp(w, 'text_opa', styles), 1);
-  const fontId = resolveProp<string>(w, 'text_font', styles);
+  const color = parseColor(resolveProp(w, 'text_color', styles, theme), '#212121');
+  const opa = parseOpacity(resolveProp(w, 'text_opa', styles, theme), 1);
+  const fontId = resolveProp<string>(w, 'text_font', styles, theme);
   const font = resolveFont(fontId, ctx.project.fonts);
 
-  const align = String(resolveProp(w, 'align', styles) ?? 'TOP_LEFT').toUpperCase();
+  const align = String(resolveProp(w, 'align', styles, theme) ?? 'TOP_LEFT').toUpperCase();
 
   const c = ctx.ctx;
   c.save();
@@ -130,9 +131,9 @@ function parseEmSize(font: string): number {
  * `SIZE_CONTENT` on labels and on containers whose children include labels.
  */
 export function measureLabel(w: LvglWidget, ctx: RenderContext): { width: number; height: number } {
-  const text = String(resolveProp(w, 'text', ctx.project.styles) ?? '');
+  const text = String(resolveProp(w, 'text', ctx.project.styles, ctx.theme) ?? '');
   if (text === '') return { width: 0, height: 0 };
-  const fontId = resolveProp<string>(w, 'text_font', ctx.project.styles);
+  const fontId = resolveProp<string>(w, 'text_font', ctx.project.styles, ctx.theme);
   const font = resolveFont(fontId, ctx.project.fonts);
   const c = ctx.ctx;
   c.save();

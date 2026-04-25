@@ -1,0 +1,132 @@
+/**
+ * Reproduction of LVGL 9.5's `lv_theme_default` for the preview renderer.
+ *
+ * Sourced from upstream `release/v9.5/src/themes/default/lv_theme_default.c`
+ * and `src/misc/lv_palette.c`. Light + dark, medium-display profile (no DPI
+ * scaling — fixed numeric values that match a typical ESP32 240×320/320×480).
+ *
+ * Consumed by `resolveProp` / `resolvePartProp` in styles.ts as the third
+ * resolution layer, after inline widget.props and widget.styles[].
+ */
+export type ThemePart = Record<string, unknown>;
+export type ThemeWidget = Record<string, ThemePart>; // keyed by part name ('main', 'indicator', 'knob', 'track')
+export type DefaultTheme = Record<string, ThemeWidget>; // keyed by widget type
+
+const PALETTE = {
+  greyMain: '#9e9e9e',
+  greyLight2: '#e0e0e0',
+  greyLight4: '#f5f5f5',
+  greyLight5: '#fafafa',
+  greyDark4: '#212121',
+  blueMain: '#2196f3',
+  blueLight4: '#bbdefb',
+  white: '#ffffff',
+} as const;
+
+const RADIUS_CIRCLE = 9999;
+const PAD_DEF = 20;
+const PAD_SMALL = 12;
+
+interface Tokens {
+  scr: string;
+  card: string;
+  grey: string;
+  text: string;
+  primary: string;
+  trackMuted: string;
+}
+
+const LIGHT_TOKENS: Tokens = {
+  scr: PALETTE.greyLight4,
+  card: PALETTE.white,
+  grey: PALETTE.greyLight2,
+  text: PALETTE.greyDark4,
+  primary: PALETTE.blueMain,
+  trackMuted: PALETTE.blueLight4,
+};
+
+const DARK_TOKENS: Tokens = {
+  scr: '#15171a',
+  card: '#282b30',
+  grey: '#2f3237',
+  text: PALETTE.greyLight5,
+  primary: PALETTE.blueMain,
+  trackMuted: '#1a2a3a',
+};
+
+function buildTheme(t: Tokens): DefaultTheme {
+  return {
+    obj: {
+      main: {
+        bg_color: t.scr,
+        bg_opa: 1,
+        text_color: t.text,
+        border_color: t.grey,
+        border_opa: 0,
+        border_width: 0,
+        radius: 0,
+      },
+    },
+    button: {
+      main: {
+        bg_color: t.grey,
+        bg_opa: 1,
+        text_color: t.text,
+        border_opa: 0,
+        border_width: 0,
+        radius: 12,
+        pad_top: PAD_SMALL,
+        pad_bottom: PAD_SMALL,
+        pad_left: PAD_DEF,
+        pad_right: PAD_DEF,
+      },
+    },
+    label: {
+      main: {
+        text_color: t.text,
+        text_opa: 1,
+        align: 'TOP_LEFT',
+      },
+    },
+    slider: {
+      main: {
+        bg_color: t.trackMuted,
+        bg_opa: 1,
+        border_opa: 0,
+        radius: RADIUS_CIRCLE,
+      },
+      indicator: {
+        bg_color: t.primary,
+        bg_opa: 1,
+        border_opa: 0,
+        radius: RADIUS_CIRCLE,
+      },
+      knob: {
+        bg_color: t.primary,
+        bg_opa: 1,
+        border_opa: 0,
+        radius: RADIUS_CIRCLE,
+        pad_all: 6,
+      },
+    },
+    spinner: {
+      main: {
+        arc_color: t.primary,
+        arc_color_track: t.grey,
+        arc_width: 15,
+      },
+    },
+  };
+}
+
+export const LIGHT_THEME: DefaultTheme = buildTheme(LIGHT_TOKENS);
+export const DARK_THEME: DefaultTheme = buildTheme(DARK_TOKENS);
+
+export function getDefaultTheme(darkMode: boolean): DefaultTheme {
+  return darkMode ? DARK_THEME : LIGHT_THEME;
+}
+
+/** Default screen background colour for the active mode (used by CanvasStage to clear the canvas). */
+export function defaultScreenBg(darkMode: boolean): string {
+  return darkMode ? DARK_TOKENS.scr : LIGHT_TOKENS.scr;
+}

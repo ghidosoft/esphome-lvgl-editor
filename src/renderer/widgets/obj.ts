@@ -11,13 +11,14 @@ import { resolveProp } from '../styles';
  */
 export function renderObj(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const styles = ctx.project.styles;
+  const theme = ctx.theme;
 
-  const bgColor = parseColor(resolveProp(w, 'bg_color', styles), '#000000');
-  const bgOpa = parseOpacity(resolveProp(w, 'bg_opa', styles), 1);
-  const borderColor = parseColor(resolveProp(w, 'border_color', styles), '#000000');
-  const borderOpa = parseOpacity(resolveProp(w, 'border_opa', styles), 0);
-  const borderWidth = num(resolveProp(w, 'border_width', styles), 0);
-  const radius = num(resolveProp(w, 'radius', styles), 0);
+  const bgColor = parseColor(resolveProp(w, 'bg_color', styles, theme), '#f5f5f5');
+  const bgOpa = parseOpacity(resolveProp(w, 'bg_opa', styles, theme), 1);
+  const borderColor = parseColor(resolveProp(w, 'border_color', styles, theme), '#e0e0e0');
+  const borderOpa = parseOpacity(resolveProp(w, 'border_opa', styles, theme), 0);
+  const borderWidth = num(resolveProp(w, 'border_width', styles, theme), 0);
+  const radius = num(resolveProp(w, 'radius', styles, theme), 0);
 
   const c = ctx.ctx;
   c.save();

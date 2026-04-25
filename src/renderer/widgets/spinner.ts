@@ -9,12 +9,13 @@ import { resolveProp } from '../styles';
  */
 export function renderSpinner(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const styles = ctx.project.styles;
-  const arcColor = parseColor(resolveProp(w, 'arc_color', styles), '#3aa0ff');
+  const theme = ctx.theme;
+  const arcColor = parseColor(resolveProp(w, 'arc_color', styles, theme), '#2196f3');
   const trackColor = parseColor(
-    resolveProp(w, 'arc_color_track', styles) ?? resolveProp(w, 'bg_color', styles),
-    '#1f2433',
+    resolveProp(w, 'arc_color_track', styles, theme) ?? resolveProp(w, 'bg_color', styles, theme),
+    '#e0e0e0',
   );
-  const arcWidth = num(resolveProp(w, 'arc_width', styles), 6);
+  const arcWidth = num(resolveProp(w, 'arc_width', styles, theme), 15);
 
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;

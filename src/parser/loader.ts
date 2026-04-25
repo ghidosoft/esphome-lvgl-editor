@@ -39,6 +39,7 @@ export function loadProject(
       fonts: {},
       images: {},
       styles: {},
+      theme: { darkMode: false },
       pages: [],
       errors: [
         ...errors,

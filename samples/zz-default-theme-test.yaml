@@ -1,0 +1,43 @@
+esphome:
+  name: zz-default-theme-test
+
+display:
+  - dimensions:
+      width: 320
+      height: 240
+
+lvgl:
+  pages:
+    - id: page_main
+      widgets:
+        - obj:
+            width: 300
+            height: 220
+            x: 10
+            y: 10
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  text: "Default theme"
+              - button:
+                  width: 120
+                  height: 40
+                  align: TOP_MID
+                  y: 30
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "OK"
+              - slider:
+                  width: 240
+                  height: 12
+                  align: TOP_MID
+                  y: 90
+                  value: 60
+              - spinner:
+                  width: 60
+                  height: 60
+                  align: BOTTOM_LEFT
+              - label:
+                  align: BOTTOM_RIGHT
+                  text: "tema default LVGL"

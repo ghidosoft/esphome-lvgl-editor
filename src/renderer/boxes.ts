@@ -2,6 +2,7 @@ import type { LvglWidget, StyleSpec } from '../parser/types';
 import { alignChild } from './align';
 import { resolveProp } from './styles';
 import type { Box } from './context';
+import type { DefaultTheme } from './defaultTheme';
 
 /**
  * Compute the absolute box of a widget given its parent inner box and an
@@ -21,17 +22,18 @@ export function computeBox(
   slot: Box | undefined,
   styles: Record<string, StyleSpec>,
   measure?: { width: () => number; height: () => number },
+  theme?: DefaultTheme,
 ): Box {
-  const widthProp = resolveProp(widget, 'width', styles);
-  const heightProp = resolveProp(widget, 'height', styles);
+  const widthProp = resolveProp(widget, 'width', styles, theme);
+  const heightProp = resolveProp(widget, 'height', styles, theme);
   const declaredW = sizeProp(widthProp, parent.width, measure?.width);
   const declaredH = sizeProp(heightProp, parent.height, measure?.height);
   const hasDeclaredW = widthProp != null;
   const hasDeclaredH = heightProp != null;
 
   if (slot) {
-    const xAlignRaw = resolveProp<string>(widget, 'grid_cell_x_align', styles);
-    const yAlignRaw = resolveProp<string>(widget, 'grid_cell_y_align', styles);
+    const xAlignRaw = resolveProp<string>(widget, 'grid_cell_x_align', styles, theme);
+    const yAlignRaw = resolveProp<string>(widget, 'grid_cell_y_align', styles, theme);
     const xAlign = String(xAlignRaw ?? 'STRETCH').toUpperCase();
     const yAlign = String(yAlignRaw ?? 'STRETCH').toUpperCase();
     const w = xAlign === 'STRETCH' || !hasDeclaredW ? slot.width : Math.min(slot.width, declaredW);
@@ -56,9 +58,9 @@ export function computeBox(
     return { x, y, width: w, height: h };
   }
 
-  const dx = numProp(resolveProp(widget, 'x', styles), 0);
-  const dy = numProp(resolveProp(widget, 'y', styles), 0);
-  const alignRaw = resolveProp<string>(widget, 'align', styles);
+  const dx = numProp(resolveProp(widget, 'x', styles, theme), 0);
+  const dy = numProp(resolveProp(widget, 'y', styles, theme), 0);
+  const alignRaw = resolveProp<string>(widget, 'align', styles, theme);
   const align = typeof alignRaw === 'string' ? alignRaw : 'TOP_LEFT';
   const w = hasDeclaredW ? declaredW : parent.width;
   const h = hasDeclaredH ? declaredH : parent.height;
@@ -67,12 +69,17 @@ export function computeBox(
 }
 
 /** Inset an absolute box by a per-side padding amount. */
-export function applyPadding(box: Box, widget: LvglWidget, styles: Record<string, StyleSpec>): Box {
-  const padAll = numProp(resolveProp(widget, 'pad_all', styles), 0);
-  const padTop = numProp(resolveProp(widget, 'pad_top', styles), padAll);
-  const padRight = numProp(resolveProp(widget, 'pad_right', styles), padAll);
-  const padBottom = numProp(resolveProp(widget, 'pad_bottom', styles), padAll);
-  const padLeft = numProp(resolveProp(widget, 'pad_left', styles), padAll);
+export function applyPadding(
+  box: Box,
+  widget: LvglWidget,
+  styles: Record<string, StyleSpec>,
+  theme?: DefaultTheme,
+): Box {
+  const padAll = numProp(resolveProp(widget, 'pad_all', styles, theme), 0);
+  const padTop = numProp(resolveProp(widget, 'pad_top', styles, theme), padAll);
+  const padRight = numProp(resolveProp(widget, 'pad_right', styles, theme), padAll);
+  const padBottom = numProp(resolveProp(widget, 'pad_bottom', styles, theme), padAll);
+  const padLeft = numProp(resolveProp(widget, 'pad_left', styles, theme), padAll);
   return {
     x: box.x + padLeft,
     y: box.y + padTop,

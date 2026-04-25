@@ -1,6 +1,7 @@
 import type { EsphomeProject, LvglPage, LvglWidget, WidgetId } from '../parser/types';
 import { parseColor } from './colors';
 import type { Box, PreviewState, RenderContext } from './context';
+import { defaultScreenBg, getDefaultTheme } from './defaultTheme';
 import { buildGrid } from './layout/grid';
 import { layoutFlex } from './layout/flex';
 import { rendererFor } from './widgets';
@@ -97,7 +98,9 @@ export class CanvasStage {
       canvas.height = height;
     }
 
-    const bg = parseColor(page.bg_color, '#000000');
+    const darkMode = project.theme?.darkMode ?? false;
+    const theme = getDefaultTheme(darkMode);
+    const bg = parseColor(page.bg_color, defaultScreenBg(darkMode));
     c.fillStyle = bg;
     c.fillRect(0, 0, width, height);
 
@@ -105,6 +108,7 @@ export class CanvasStage {
     const ctx: RenderContext = {
       ctx: c,
       project,
+      theme,
       requestRepaint: this.requestRepaint,
       activeState,
       activeStateWidgetId,
@@ -140,12 +144,19 @@ function renderWidget(
   // Memoise the intrinsic measure so both axes share one traversal.
   let memo: { width: number; height: number } | undefined;
   const getMeasure = () => (memo ??= measureContent(effective, ctx));
-  const box = computeBox(effective, parentBox, parentSlot, ctx.project.styles, {
-    width: () => getMeasure().width,
-    height: () => getMeasure().height,
-  });
+  const box = computeBox(
+    effective,
+    parentBox,
+    parentSlot,
+    ctx.project.styles,
+    {
+      width: () => getMeasure().width,
+      height: () => getMeasure().height,
+    },
+    ctx.theme,
+  );
   const drawn = rendererFor(effective.type)(effective, box, ctx);
-  const inner = applyPadding(drawn, effective, ctx.project.styles);
+  const inner = applyPadding(drawn, effective, ctx.project.styles, ctx.theme);
 
   if (widget.widgetId) {
     hits.push({ widgetId: widget.widgetId, box: drawn, depth });
@@ -212,8 +223,8 @@ function resolveChildSize(
   ctx: RenderContext,
 ): { width: number; height: number } {
   const styles = ctx.project.styles;
-  const wProp = resolveProp(child, 'width', styles);
-  const hProp = resolveProp(child, 'height', styles);
+  const wProp = resolveProp(child, 'width', styles, ctx.theme);
+  const hProp = resolveProp(child, 'height', styles, ctx.theme);
   let memo: { width: number; height: number } | undefined;
   const m = () => (memo ??= measureContent(child, ctx));
   return {

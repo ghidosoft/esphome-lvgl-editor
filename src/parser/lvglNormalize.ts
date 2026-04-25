@@ -69,6 +69,8 @@ export function normalizeProject(args: {
     ? readStyles(lvgl, lvglOriginMap.style_definitions, styleSources, usagesByVar)
     : {};
 
+  const theme = readTheme(lvgl);
+
   const pages = lvgl ? readPages(lvgl, lvglOriginMap, errors, sources, usagesByVar) : [];
 
   const substitutions = buildSubstitutionEntries(subs, subsOrigin, usagesByVar);
@@ -81,6 +83,7 @@ export function normalizeProject(args: {
     fonts,
     images,
     styles,
+    theme,
     pages,
     errors,
     sources,
@@ -88,6 +91,13 @@ export function normalizeProject(args: {
     substitutions,
     files,
   };
+}
+
+function readTheme(lvgl: Record<string, unknown> | undefined): { darkMode: boolean } {
+  const block = lvgl?.theme;
+  if (!block || typeof block !== 'object' || Array.isArray(block)) return { darkMode: false };
+  const v = (block as Record<string, unknown>).dark_mode;
+  return { darkMode: v === true || v === 'true' };
 }
 
 function readDisplaySize(doc: Record<string, unknown>): { width: number; height: number } {

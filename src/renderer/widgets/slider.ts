@@ -1,7 +1,7 @@
 import type { LvglWidget } from '../../parser/types';
 import { parseColor, parseOpacity, withAlpha } from '../colors';
 import type { Box, RenderContext } from '../context';
-import { resolveProp } from '../styles';
+import { resolvePartProp, resolveProp } from '../styles';
 import { roundedRectPath } from './obj';
 
 /**
@@ -12,40 +12,38 @@ import { roundedRectPath } from './obj';
  */
 export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const styles = ctx.project.styles;
-  const min = num(resolveProp(w, 'min_value', styles), 0);
-  const max = num(resolveProp(w, 'max_value', styles), 100);
-  const value = num(resolveProp(w, 'value', styles), min);
+  const theme = ctx.theme;
+  const min = num(resolveProp(w, 'min_value', styles, theme), 0);
+  const max = num(resolveProp(w, 'max_value', styles, theme), 100);
+  const value = num(resolveProp(w, 'value', styles, theme), min);
   const ratio = max > min ? Math.max(0, Math.min(1, (value - min) / (max - min))) : 0;
 
-  const indicator = partBag(w, 'indicator');
-  const knob = partBag(w, 'knob');
-
-  const trackRadius = num(resolveProp(w, 'radius', styles), Math.min(box.height, 8));
+  const trackRadius = num(resolveProp(w, 'radius', styles, theme), Math.min(box.height, 8));
   const track: PartStyle = {
-    fill: parseColor(resolveProp(w, 'bg_color', styles), '#333333'),
-    fillOpa: parseOpacity(resolveProp(w, 'bg_opa', styles), 1),
-    borderColor: parseColor(resolveProp(w, 'border_color', styles), '#000000'),
-    borderWidth: num(resolveProp(w, 'border_width', styles), 0),
-    borderOpa: parseOpacity(resolveProp(w, 'border_opa', styles), 0),
+    fill: parseColor(resolveProp(w, 'bg_color', styles, theme), '#bbdefb'),
+    fillOpa: parseOpacity(resolveProp(w, 'bg_opa', styles, theme), 1),
+    borderColor: parseColor(resolveProp(w, 'border_color', styles, theme), '#000000'),
+    borderWidth: num(resolveProp(w, 'border_width', styles, theme), 0),
+    borderOpa: parseOpacity(resolveProp(w, 'border_opa', styles, theme), 0),
     radius: trackRadius,
   };
   const ind: PartStyle = {
-    fill: parseColor(indicator?.bg_color, '#3aa0ff'),
-    fillOpa: parseOpacity(indicator?.bg_opa, 1),
-    borderColor: parseColor(indicator?.border_color, '#000000'),
-    borderWidth: num(indicator?.border_width, 0),
-    borderOpa: parseOpacity(indicator?.border_opa, 0),
-    radius: num(indicator?.radius, trackRadius),
+    fill: parseColor(resolvePartProp(w, 'indicator', 'bg_color', styles, theme), '#2196f3'),
+    fillOpa: parseOpacity(resolvePartProp(w, 'indicator', 'bg_opa', styles, theme), 1),
+    borderColor: parseColor(resolvePartProp(w, 'indicator', 'border_color', styles, theme), '#000000'),
+    borderWidth: num(resolvePartProp(w, 'indicator', 'border_width', styles, theme), 0),
+    borderOpa: parseOpacity(resolvePartProp(w, 'indicator', 'border_opa', styles, theme), 0),
+    radius: num(resolvePartProp(w, 'indicator', 'radius', styles, theme), trackRadius),
   };
   // LVGL knob default is a circle (radius ≥ half the knob's short side).
   const knobHalf = box.height * 0.9;
   const kn: PartStyle = {
-    fill: parseColor(knob?.bg_color, '#ffffff'),
-    fillOpa: parseOpacity(knob?.bg_opa, 1),
-    borderColor: parseColor(knob?.border_color, '#000000'),
-    borderWidth: num(knob?.border_width, 0),
-    borderOpa: parseOpacity(knob?.border_opa, 0),
-    radius: num(knob?.radius, knobHalf),
+    fill: parseColor(resolvePartProp(w, 'knob', 'bg_color', styles, theme), '#2196f3'),
+    fillOpa: parseOpacity(resolvePartProp(w, 'knob', 'bg_opa', styles, theme), 1),
+    borderColor: parseColor(resolvePartProp(w, 'knob', 'border_color', styles, theme), '#000000'),
+    borderWidth: num(resolvePartProp(w, 'knob', 'border_width', styles, theme), 0),
+    borderOpa: parseOpacity(resolvePartProp(w, 'knob', 'border_opa', styles, theme), 0),
+    radius: num(resolvePartProp(w, 'knob', 'radius', styles, theme), knobHalf),
   };
 
   const c = ctx.ctx;
@@ -95,13 +93,6 @@ function fillRect(
     c.lineWidth = s.borderWidth;
     c.stroke();
   }
-}
-
-function partBag(w: LvglWidget, key: string): Record<string, unknown> | undefined {
-  const v = w.props[key];
-  return v && typeof v === 'object' && !Array.isArray(v)
-    ? (v as Record<string, unknown>)
-    : undefined;
 }
 
 function num(v: unknown, fallback: number): number {

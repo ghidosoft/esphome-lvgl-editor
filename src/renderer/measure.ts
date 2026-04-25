@@ -51,10 +51,10 @@ function measureChildren(
     const child = widget.children[i];
     const size = childSizes[i];
     const styles = ctx.project.styles;
-    const align = String(resolveProp(child, 'align', styles) ?? 'TOP_LEFT').toUpperCase();
+    const align = String(resolveProp(child, 'align', styles, ctx.theme) ?? 'TOP_LEFT').toUpperCase();
     const { hAnchor, vAnchor } = anchorsOf(align);
-    const dx = numProp(resolveProp(child, 'x', styles), 0);
-    const dy = numProp(resolveProp(child, 'y', styles), 0);
+    const dx = numProp(resolveProp(child, 'x', styles, ctx.theme), 0);
+    const dy = numProp(resolveProp(child, 'y', styles, ctx.theme), 0);
     w = Math.max(w, extentFor(hAnchor, dx, size.width));
     h = Math.max(h, extentFor(vAnchor, dy, size.height));
   }
@@ -111,8 +111,8 @@ function measureChildIntrinsic(
   ctx: RenderContext,
 ): { width: number; height: number } {
   const styles = ctx.project.styles;
-  const wProp = resolveProp(widget, 'width', styles);
-  const hProp = resolveProp(widget, 'height', styles);
+  const wProp = resolveProp(widget, 'width', styles, ctx.theme);
+  const hProp = resolveProp(widget, 'height', styles, ctx.theme);
   const content = () => measureContent(widget, ctx);
   return {
     width: dimForMeasure(wProp, () => content().width),
@@ -138,11 +138,11 @@ function withPadding(
   size: { width: number; height: number },
 ): { width: number; height: number } {
   const styles = ctx.project.styles;
-  const padAll = numProp(resolveProp(widget, 'pad_all', styles), 0);
-  const padLeft = numProp(resolveProp(widget, 'pad_left', styles), padAll);
-  const padRight = numProp(resolveProp(widget, 'pad_right', styles), padAll);
-  const padTop = numProp(resolveProp(widget, 'pad_top', styles), padAll);
-  const padBottom = numProp(resolveProp(widget, 'pad_bottom', styles), padAll);
+  const padAll = numProp(resolveProp(widget, 'pad_all', styles, ctx.theme), 0);
+  const padLeft = numProp(resolveProp(widget, 'pad_left', styles, ctx.theme), padAll);
+  const padRight = numProp(resolveProp(widget, 'pad_right', styles, ctx.theme), padAll);
+  const padTop = numProp(resolveProp(widget, 'pad_top', styles, ctx.theme), padAll);
+  const padBottom = numProp(resolveProp(widget, 'pad_bottom', styles, ctx.theme), padAll);
   return {
     width: size.width + padLeft + padRight,
     height: size.height + padTop + padBottom,
