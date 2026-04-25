@@ -3,7 +3,7 @@
 #
 # A 3-column dashboard tile grid using fractional units (FR). Demonstrates:
 # layout type GRID, grid_columns / grid_rows with FR sizing, grid_cell_*
-# placement, child STRETCH alignment.
+# placement, child STRETCH alignment. Tile styling is LVGL default theme.
 
 esphome:
   name: lvgl-sample-grid
@@ -16,17 +16,14 @@ display:
 lvgl:
   pages:
     - id: main_page
-      bg_color: 0x0b1120
       widgets:
         - obj:
             id: dashboard
-            x: 0
-            y: 0
             align: CENTER
             width: 300
             height: 220
             bg_opa: TRANSP
-            border_width: 0
+            border_opa: TRANSP
             pad_all: 6
             layout:
               type: GRID
@@ -40,51 +37,35 @@ lvgl:
                   grid_cell_column_pos: 0
                   grid_cell_x_align: STRETCH
                   grid_cell_y_align: STRETCH
-                  bg_color: 0x1e3a8a
-                  radius: 8
-                  border_width: 0
                   widgets:
                     - label:
                         align: CENTER
                         text: "21°C"
-                        text_color: 0xdbeafe
               - obj:
                   grid_cell_row_pos: 0
                   grid_cell_column_pos: 1
                   grid_cell_x_align: STRETCH
                   grid_cell_y_align: STRETCH
-                  bg_color: 0x065f46
-                  radius: 8
-                  border_width: 0
                   widgets:
                     - label:
                         align: CENTER
                         text: "48 %"
-                        text_color: 0xd1fae5
               - obj:
                   grid_cell_row_pos: 0
                   grid_cell_column_pos: 2
                   grid_cell_x_align: STRETCH
                   grid_cell_y_align: STRETCH
-                  bg_color: 0x7c2d12
-                  radius: 8
-                  border_width: 0
                   widgets:
                     - label:
                         align: CENTER
                         text: "1013"
-                        text_color: 0xfed7aa
               - obj:
                   grid_cell_row_pos: 1
                   grid_cell_column_pos: 0
                   grid_cell_column_span: 3
                   grid_cell_x_align: STRETCH
                   grid_cell_y_align: STRETCH
-                  bg_color: 0x1f2937
-                  radius: 8
-                  border_width: 0
                   widgets:
                     - label:
                         align: CENTER
                         text: "Living room"
-                        text_color: 0xe5e7eb

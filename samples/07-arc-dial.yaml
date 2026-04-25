@@ -1,0 +1,39 @@
+# Standalone sample (no direct cookbook equivalent — the cookbook uses
+# `meter` for dial/thermostat patterns). A minimal `arc` widget with a
+# centred value label, mirroring LVGL's `lv_example_arc_1`. Demonstrates:
+# arc with min/max/value, rotation + angle_range, indicator/knob parts,
+# nested centred label. Styling is the LVGL default theme — track muted,
+# indicator and knob primary blue, knob circular.
+
+esphome:
+  name: lvgl-sample-arc-dial
+
+display:
+  - dimensions:
+      width: 320
+      height: 240
+
+lvgl:
+  pages:
+    - id: main_page
+      widgets:
+        - label:
+            align: TOP_MID
+            y: 18
+            text: "Arc dial"
+
+        - arc:
+            id: dial
+            align: CENTER
+            y: 10
+            width: 180
+            height: 180
+            min_value: 0
+            max_value: 100
+            value: 70
+            rotation: 135
+            angle_range: 270
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "70"

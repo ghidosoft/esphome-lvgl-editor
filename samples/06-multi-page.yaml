@@ -3,7 +3,8 @@
 #
 # Two pages with a footer of buttons that navigate via on_click +
 # lvgl.page.show. The cookbook uses `buttonmatrix` (not yet supported by the
-# editor); this adaptation uses three regular buttons in a FLEX row.
+# editor); this adaptation uses three regular buttons in a FLEX row, styled
+# entirely by the LVGL default theme.
 
 esphome:
   name: lvgl-sample-multipage
@@ -16,31 +17,24 @@ display:
 lvgl:
   pages:
     - id: home_page
-      bg_color: 0x0f172a
       widgets:
         - label:
-            x: 0
-            y: 60
             align: TOP_MID
+            y: 60
             text: "Home"
-            text_color: 0xe2e8f0
 
         - label:
-            x: 0
-            y: 100
             align: TOP_MID
+            y: 100
             text: "Welcome to the dashboard"
-            text_color: 0x94a3b8
 
         - obj:
-            x: 0
-            y: -10
             align: BOTTOM_MID
+            y: -10
             width: 300
-            height: 50
-            bg_color: 0x1e293b
-            radius: 8
-            border_width: 0
+            height: 60
+            bg_opa: TRANSP
+            border_opa: TRANSP
             pad_all: 6
             layout:
               type: FLEX
@@ -49,56 +43,43 @@ lvgl:
               flex_align_cross: CENTER
             widgets:
               - button:
-                  width: 80
-                  height: 36
-                  bg_color: 0x2563eb
-                  radius: 6
+                  width: 110
+                  height: 44
                   on_click:
                     - lvgl.page.show: home_page
                   widgets:
                     - label:
                         align: CENTER
                         text: "Home"
-                        text_color: 0xeff6ff
               - button:
-                  width: 80
-                  height: 36
-                  bg_color: 0x334155
-                  radius: 6
+                  width: 110
+                  height: 44
                   on_click:
                     - lvgl.page.show: settings_page
                   widgets:
                     - label:
                         align: CENTER
                         text: "Settings"
-                        text_color: 0xe2e8f0
 
     - id: settings_page
-      bg_color: 0x111827
       widgets:
         - label:
-            x: 0
-            y: 60
             align: TOP_MID
+            y: 60
             text: "Settings"
-            text_color: 0xe2e8f0
 
         - label:
-            x: 0
-            y: 100
             align: TOP_MID
+            y: 100
             text: "Tap a footer button to switch page"
-            text_color: 0x94a3b8
 
         - obj:
-            x: 0
-            y: -10
             align: BOTTOM_MID
+            y: -10
             width: 300
-            height: 50
-            bg_color: 0x1e293b
-            radius: 8
-            border_width: 0
+            height: 60
+            bg_opa: TRANSP
+            border_opa: TRANSP
             pad_all: 6
             layout:
               type: FLEX
@@ -107,26 +88,20 @@ lvgl:
               flex_align_cross: CENTER
             widgets:
               - button:
-                  width: 80
-                  height: 36
-                  bg_color: 0x334155
-                  radius: 6
+                  width: 110
+                  height: 44
                   on_click:
                     - lvgl.page.show: home_page
                   widgets:
                     - label:
                         align: CENTER
                         text: "Home"
-                        text_color: 0xe2e8f0
               - button:
-                  width: 80
-                  height: 36
-                  bg_color: 0x2563eb
-                  radius: 6
+                  width: 110
+                  height: 44
                   on_click:
                     - lvgl.page.show: settings_page
                   widgets:
                     - label:
                         align: CENTER
                         text: "Settings"
-                        text_color: 0xeff6ff

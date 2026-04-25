@@ -13,7 +13,7 @@ export function renderObj(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const styles = ctx.project.styles;
   const theme = ctx.theme;
 
-  const bgColor = parseColor(resolveProp(w, 'bg_color', styles, theme), '#f5f5f5');
+  const bgColor = parseColor(resolveProp(w, 'bg_color', styles, theme), '#ffffff');
   const bgOpa = parseOpacity(resolveProp(w, 'bg_opa', styles, theme), 1);
   const borderColor = parseColor(resolveProp(w, 'border_color', styles, theme), '#e0e0e0');
   const borderOpa = parseOpacity(resolveProp(w, 'border_opa', styles, theme), 0);

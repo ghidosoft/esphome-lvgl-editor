@@ -2,8 +2,9 @@
 # https://esphome.io/cookbook/lvgl/#roller
 #
 # Two side-by-side `roller` widgets acting as a simple time picker (hour and
-# minute). Demonstrates: roller options list, visible_row_count, mode INFINITE,
-# selected part styling.
+# minute). Demonstrates: roller options list, visible_row_count, mode INFINITE.
+# Styling relies on the LVGL default theme — selected row highlights with
+# the primary colour automatically.
 
 esphome:
   name: lvgl-sample-roller-picker
@@ -16,23 +17,19 @@ display:
 lvgl:
   pages:
     - id: main_page
-      bg_color: 0x0f172a
       widgets:
         - label:
-            x: 0
-            y: 16
             align: TOP_MID
+            y: 16
             text: "Set alarm"
-            text_color: 0xe2e8f0
 
         - obj:
             align: CENTER
             y: 10
             width: 260
             height: 160
-            bg_color: 0x1e293b
-            border_width: 0
-            radius: 10
+            bg_opa: TRANSP
+            border_opa: TRANSP
             pad_all: 12
             layout:
               type: FLEX
@@ -46,11 +43,6 @@ lvgl:
                   height: 130
                   visible_row_count: 3
                   mode: INFINITE
-                  bg_color: 0x111827
-                  text_color: 0x94a3b8
-                  selected:
-                    bg_color: 0x2563eb
-                    text_color: 0xf9fafb
                   options:
                     - "06"
                     - "07"
@@ -63,7 +55,6 @@ lvgl:
 
               - label:
                   text: ":"
-                  text_color: 0xf9fafb
 
               - roller:
                   id: minute_roller
@@ -71,11 +62,6 @@ lvgl:
                   height: 130
                   visible_row_count: 3
                   mode: INFINITE
-                  bg_color: 0x111827
-                  text_color: 0x94a3b8
-                  selected:
-                    bg_color: 0x2563eb
-                    text_color: 0xf9fafb
                   options:
                     - "00"
                     - "15"

@@ -3,7 +3,9 @@
 #
 # A circular `meter` configured with hour ticks and two indicator lines acting
 # as hour and minute hands. Demonstrates: meter with scales, tick_style major
-# strides, line indicators with explicit values.
+# strides, line indicators with explicit values. Hands keep the cookbook's
+# explicit black `color: 0x000000` (semantic — they need to read on top of
+# the meter face); the meter face itself is the LVGL default theme.
 
 esphome:
   name: lvgl-sample-analog-clock
@@ -16,17 +18,12 @@ display:
 lvgl:
   pages:
     - id: main_page
-      bg_color: 0x0f172a
       widgets:
         - meter:
             id: clock
             align: CENTER
             width: 200
             height: 200
-            bg_color: 0x111827
-            border_color: 0x1e293b
-            border_width: 2
-            radius: 100
             scales:
               - range_from: 0
                 range_to: 60
@@ -36,23 +33,21 @@ lvgl:
                   count: 61
                   width: 1
                   length: 8
-                  color: 0x475569
                   major:
                     stride: 5
                     width: 3
                     length: 14
-                    color: 0xe2e8f0
                     label_gap: 14
                 indicators:
                   - line:
                       id: minute_hand
                       width: 3
-                      color: 0xfbbf24
+                      color: 0x000000
                       length: 80
                       value: 24
                   - line:
                       id: hour_hand
                       width: 5
-                      color: 0xf9fafb
+                      color: 0x000000
                       length: 50
                       value: 50

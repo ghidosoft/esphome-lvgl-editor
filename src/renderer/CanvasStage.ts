@@ -1,7 +1,7 @@
 import type { EsphomeProject, LvglPage, LvglWidget, WidgetId } from '../parser/types';
 import { parseColor } from './colors';
 import type { Box, PreviewState, RenderContext } from './context';
-import { defaultScreenBg, getDefaultTheme } from './defaultTheme';
+import { defaultScreenBg, getDefaultTheme, THEME_STATES } from './defaultTheme';
 import { buildGrid } from './layout/grid';
 import { layoutFlex } from './layout/flex';
 import { rendererFor } from './widgets';
@@ -245,7 +245,15 @@ function maybeForceState(widget: LvglWidget, ctx: RenderContext): LvglWidget {
   const { activeState, activeStateWidgetId } = ctx;
   if (!activeState || !activeStateWidgetId) return widget;
   if (widget.widgetId !== activeStateWidgetId) return widget;
-  const block = widget.props[activeState];
-  if (!block || typeof block !== 'object' || Array.isArray(block)) return widget;
-  return { ...widget, props: { ...widget.props, ...(block as Record<string, unknown>) } };
+  const themeBag = THEME_STATES[widget.type]?.[activeState];
+  const inline = widget.props[activeState];
+  const inlineBag =
+    inline && typeof inline === 'object' && !Array.isArray(inline)
+      ? (inline as Record<string, unknown>)
+      : undefined;
+  if (!themeBag && !inlineBag) return widget;
+  return {
+    ...widget,
+    props: { ...widget.props, ...(themeBag ?? {}), ...(inlineBag ?? {}) },
+  };
 }

@@ -37,14 +37,13 @@ implemented.
 
 | File | Cookbook reference | Widget gap |
 | --- | --- | --- |
-| [07-thermostat-arc.yaml](07-thermostat-arc.yaml) | [Semicircle thermostat dial](https://esphome.io/cookbook/lvgl/#semicircle-thermostat-dial) | `arc` |
+| [07-arc-dial.yaml](07-arc-dial.yaml) | (no cookbook equivalent — mirrors LVGL's `lv_example_arc_1`) | `arc` |
 | [08-local-light-switch.yaml](08-local-light-switch.yaml) | [Local light switch](https://esphome.io/cookbook/lvgl/#local-light-switch) | `switch` |
 | [09-numeric-keypad.yaml](09-numeric-keypad.yaml) | [Numeric keypad](https://esphome.io/cookbook/lvgl/#numeric-keypad) | `buttonmatrix` |
 | [10-climate-spinbox.yaml](10-climate-spinbox.yaml) | [Climate control](https://esphome.io/cookbook/lvgl/#climate-control) | `spinbox` |
 | [11-checkbox-list.yaml](11-checkbox-list.yaml) | [Checkbox](https://esphome.io/cookbook/lvgl/#checkbox) | `checkbox` |
 | [12-roller-picker.yaml](12-roller-picker.yaml) | [Roller](https://esphome.io/cookbook/lvgl/#roller) | `roller` / `dropdown` |
 | [13-analog-clock.yaml](13-analog-clock.yaml) | [Analog clock](https://esphome.io/cookbook/lvgl/#analog-clock) | `meter`, `line` indicators |
-| [14-boot-fade.yaml](14-boot-fade.yaml) | [ESPHome boot screen](https://esphome.io/cookbook/lvgl/#esphome-boot-screen) | `top_layer` overlay slot, fade animation |
 
 ## Roadmap: gaps still uncovered by samples
 
@@ -54,4 +53,5 @@ Widgets/features without a sample yet, for whoever wants to extend the set:
 | --- | --- |
 | `bar` | (used implicitly in many gauges) |
 | State-specific styles (pressed/checked transitions) | theme example |
-| Animations beyond fade (rotate, position) | charging icon, burn-in offset |
+| Top-layer overlay slot (`top_layer:`) | boot screen overlay variant |
+| Animations (fade, rotate, position) | boot screen fade, charging icon, burn-in offset |

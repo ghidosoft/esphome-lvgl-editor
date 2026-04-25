@@ -2,7 +2,9 @@
 # https://esphome.io/cookbook/lvgl/#checkbox
 #
 # A vertical list of `checkbox` widgets in a FLEX column. Demonstrates:
-# checkbox text + checked state, FLEX column layout, indicator part styling.
+# checkbox text + checked state, FLEX column layout. The container is
+# transparent so the items sit on the screen background; the checkboxes
+# themselves rely on the LVGL default theme (primary colour when checked).
 
 esphome:
   name: lvgl-sample-checkbox-list
@@ -15,23 +17,19 @@ display:
 lvgl:
   pages:
     - id: main_page
-      bg_color: 0x111827
       widgets:
         - label:
-            x: 0
-            y: 18
             align: TOP_MID
+            y: 18
             text: "Notifications"
-            text_color: 0xe2e8f0
 
         - obj:
             align: CENTER
             y: 10
             width: 260
             height: 160
-            bg_color: 0x1f2937
-            border_width: 0
-            radius: 10
+            bg_opa: TRANSP
+            border_opa: TRANSP
             pad_all: 16
             layout:
               type: FLEX
@@ -43,33 +41,17 @@ lvgl:
               - checkbox:
                   id: cb_email
                   text: "Email alerts"
-                  text_color: 0xe2e8f0
                   checked: true
-                  indicator:
-                    bg_color: 0x2563eb
-                    border_color: 0x60a5fa
 
               - checkbox:
                   id: cb_push
                   text: "Push notifications"
-                  text_color: 0xe2e8f0
-                  indicator:
-                    bg_color: 0x1e293b
-                    border_color: 0x475569
 
               - checkbox:
                   id: cb_sms
                   text: "SMS"
-                  text_color: 0xe2e8f0
-                  indicator:
-                    bg_color: 0x1e293b
-                    border_color: 0x475569
 
               - checkbox:
                   id: cb_digest
                   text: "Weekly digest"
-                  text_color: 0xe2e8f0
                   checked: true
-                  indicator:
-                    bg_color: 0x2563eb
-                    border_color: 0x60a5fa

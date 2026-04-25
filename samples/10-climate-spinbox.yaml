@@ -3,7 +3,8 @@
 #
 # A `spinbox` flanked by - / + buttons to adjust the target temperature.
 # Demonstrates: spinbox with range/digits/decimal_places, FLEX row layout,
-# button on_click triggering lvgl.spinbox.increment / decrement.
+# button on_click triggering lvgl.spinbox.increment / decrement. Styling is
+# the LVGL default theme.
 
 esphome:
   name: lvgl-sample-climate-spinbox
@@ -16,23 +17,18 @@ display:
 lvgl:
   pages:
     - id: main_page
-      bg_color: 0x0f172a
       widgets:
         - label:
-            x: 0
-            y: 30
             align: TOP_MID
+            y: 30
             text: "Target temperature"
-            text_color: 0xe2e8f0
 
         - obj:
             align: CENTER
-            y: 0
             width: 240
             height: 70
-            bg_color: 0x1e293b
-            radius: 10
-            border_width: 0
+            bg_opa: TRANSP
+            border_opa: TRANSP
             pad_all: 8
             layout:
               type: FLEX
@@ -44,15 +40,12 @@ lvgl:
                   id: spin_down
                   width: 50
                   height: 50
-                  bg_color: 0x334155
-                  radius: 8
                   on_click:
                     - lvgl.spinbox.decrement: target_temp
                   widgets:
                     - label:
                         align: CENTER
                         text: "-"
-                        text_color: 0xf9fafb
 
               - spinbox:
                   id: target_temp
@@ -66,18 +59,14 @@ lvgl:
                   decimal_places: 1
                   step: 0.5
                   rollover: false
-                  text_color: 0xfbbf24
 
               - button:
                   id: spin_up
                   width: 50
                   height: 50
-                  bg_color: 0x334155
-                  radius: 8
                   on_click:
                     - lvgl.spinbox.increment: target_temp
                   widgets:
                     - label:
                         align: CENTER
                         text: "+"
-                        text_color: 0xf9fafb

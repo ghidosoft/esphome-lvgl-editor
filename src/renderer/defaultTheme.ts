@@ -12,6 +12,15 @@ export type ThemePart = Record<string, unknown>;
 export type ThemeWidget = Record<string, ThemePart>; // keyed by part name ('main', 'indicator', 'knob', 'track')
 export type DefaultTheme = Record<string, ThemeWidget>; // keyed by widget type
 
+/**
+ * Extra prop overrides the theme applies on top of `main` when a widget is in a
+ * specific LVGL state. Used by the renderer's state-forcing path so that — even
+ * if the YAML has no `checked:`/`pressed:`/`disabled:` block — the preview
+ * still reflects what `lv_theme_default` would automatically draw.
+ */
+export type StateOverrides = Partial<Record<'checked' | 'pressed' | 'disabled', ThemePart>>;
+export type ThemeStates = Record<string, StateOverrides>; // keyed by widget type
+
 const PALETTE = {
   greyMain: '#9e9e9e',
   greyLight2: '#e0e0e0',
@@ -33,8 +42,12 @@ interface Tokens {
   grey: string;
   text: string;
   primary: string;
+  secondary: string;
   trackMuted: string;
 }
+
+// Default secondary colour from LVGL's theme args (`LV_PALETTE_RED main`).
+const SECONDARY = '#f44336';
 
 const LIGHT_TOKENS: Tokens = {
   scr: PALETTE.greyLight4,
@@ -42,6 +55,7 @@ const LIGHT_TOKENS: Tokens = {
   grey: PALETTE.greyLight2,
   text: PALETTE.greyDark4,
   primary: PALETTE.blueMain,
+  secondary: SECONDARY,
   trackMuted: PALETTE.blueLight4,
 };
 
@@ -51,14 +65,19 @@ const DARK_TOKENS: Tokens = {
   grey: '#2f3237',
   text: PALETTE.greyLight5,
   primary: PALETTE.blueMain,
+  secondary: SECONDARY,
   trackMuted: '#1a2a3a',
 };
 
 function buildTheme(t: Tokens): DefaultTheme {
   return {
     obj: {
+      // LVGL applies the "card" style to non-screen obj instances — white
+      // background in light mode, slightly lifted dark grey in dark mode.
+      // The actual screen background is painted directly by CanvasStage via
+      // `defaultScreenBg(darkMode)` and uses the `scr` token instead.
       main: {
-        bg_color: t.scr,
+        bg_color: t.card,
         bg_opa: 1,
         text_color: t.text,
         border_color: t.grey,
@@ -122,8 +141,30 @@ function buildTheme(t: Tokens): DefaultTheme {
 export const LIGHT_THEME: DefaultTheme = buildTheme(LIGHT_TOKENS);
 export const DARK_THEME: DefaultTheme = buildTheme(DARK_TOKENS);
 
+/**
+ * State-driven theme overrides. Replicates the per-state styles the LVGL
+ * default theme automatically applies (e.g. button checked → secondary bg).
+ *
+ * The renderer merges these on top of widget.props (and beneath any explicit
+ * inline `checked:`/`pressed:`/`disabled:` block) only when the inspector is
+ * actively forcing that state — see `maybeForceState` in CanvasStage.
+ *
+ * Note: LVGL also applies a `recolor` overlay for `pressed` (black @ 35% opa)
+ * and `disabled` (grey @ 50% opa) — those need color-mixing in the renderer
+ * and aren't represented here yet.
+ */
+export const THEME_STATES: ThemeStates = {
+  button: {
+    checked: { bg_color: SECONDARY },
+  },
+};
+
 export function getDefaultTheme(darkMode: boolean): DefaultTheme {
   return darkMode ? DARK_THEME : LIGHT_THEME;
+}
+
+export function getThemeStates(): ThemeStates {
+  return THEME_STATES;
 }
 
 /** Default screen background colour for the active mode (used by CanvasStage to clear the canvas). */
