@@ -1,7 +1,8 @@
 # Samples
 
-Self-contained ESPHome configs that demonstrate the LVGL features the editor
-currently renders. Run any of them with:
+Self-contained ESPHome configs derived from the official
+[ESPHome LVGL cookbook](https://esphome.io/cookbook/lvgl/). Run any of them
+with:
 
 ```sh
 esphome-lvgl-editor samples/        # this directory
@@ -9,11 +10,15 @@ esphome-lvgl-editor --demo          # uses these bundled samples
 ```
 
 Each file is a complete, minimal ESPHome config — no `!include`, no `packages`,
-no external substitutions. They are derived from the official
-[ESPHome LVGL cookbook](https://esphome.io/cookbook/lvgl/) and trimmed to fit
-the supported widget set.
+no external substitutions.
 
-## Index
+The set is split into two groups: samples that **render today** with the
+current widget support, and samples that exist as **forward-looking targets**
+for widgets/features the editor doesn't draw yet. The second group will start
+rendering correctly as the renderer grows; until then they appear in the
+sidebar but show only the parts the editor already knows about.
+
+## Renders today
 
 | File | Cookbook reference | Demonstrates |
 | --- | --- | --- |
@@ -24,26 +29,29 @@ the supported widget set.
 | [05-boot-screen.yaml](05-boot-screen.yaml) | [ESPHome boot screen](https://esphome.io/cookbook/lvgl/#esphome-boot-screen) | full-screen `obj` overlay, `spinner`, nested centered content |
 | [06-multi-page.yaml](06-multi-page.yaml) | [Page navigation footer](https://esphome.io/cookbook/lvgl/#page-navigation-footer) (adapted) | multiple `pages`, `on_click: lvgl.page.show` navigation |
 
-## Roadmap: cookbook examples not yet renderable
+## Pending renderer support
 
-The cookbook covers more widgets and behaviors than the editor currently
-draws. The list below is the gap to close before the editor can claim
-"renders the full cookbook":
+These ship the cookbook YAML as-is, including widgets the editor cannot draw
+yet. They serve as a checklist: each one lights up as soon as its widget is
+implemented.
+
+| File | Cookbook reference | Widget gap |
+| --- | --- | --- |
+| [07-thermostat-arc.yaml](07-thermostat-arc.yaml) | [Semicircle thermostat dial](https://esphome.io/cookbook/lvgl/#semicircle-thermostat-dial) | `arc` |
+| [08-local-light-switch.yaml](08-local-light-switch.yaml) | [Local light switch](https://esphome.io/cookbook/lvgl/#local-light-switch) | `switch` |
+| [09-numeric-keypad.yaml](09-numeric-keypad.yaml) | [Numeric keypad](https://esphome.io/cookbook/lvgl/#numeric-keypad) | `buttonmatrix` |
+| [10-climate-spinbox.yaml](10-climate-spinbox.yaml) | [Climate control](https://esphome.io/cookbook/lvgl/#climate-control) | `spinbox` |
+| [11-checkbox-list.yaml](11-checkbox-list.yaml) | [Checkbox](https://esphome.io/cookbook/lvgl/#checkbox) | `checkbox` |
+| [12-roller-picker.yaml](12-roller-picker.yaml) | [Roller](https://esphome.io/cookbook/lvgl/#roller) | `roller` / `dropdown` |
+| [13-analog-clock.yaml](13-analog-clock.yaml) | [Analog clock](https://esphome.io/cookbook/lvgl/#analog-clock) | `meter`, `line` indicators |
+| [14-boot-fade.yaml](14-boot-fade.yaml) | [ESPHome boot screen](https://esphome.io/cookbook/lvgl/#esphome-boot-screen) | `top_layer` overlay slot, fade animation |
+
+## Roadmap: gaps still uncovered by samples
+
+Widgets/features without a sample yet, for whoever wants to extend the set:
 
 | Widget / feature | Cookbook examples that use it |
 | --- | --- |
-| `arc` | semicircle gauge, thermometers |
 | `bar` | (used implicitly in many gauges) |
-| `meter` | gauge, thermometers, analog clock |
-| `switch` | local light switch, theme example |
-| `buttonmatrix` | page navigation footer, numeric keypad, theme example |
-| `spinbox` | climate control, numeric keypad |
-| `checkbox` | "fix missing checkbox" |
-| `dropdown` / `roller` | "fix missing chevron" |
-| `line` (as meter indicator) | meter indicators |
-| `top_layer` overlay slot | boot screen, API status icon, page nav, title bar |
-| Animations (rotate, fade, position) | boot screen fade, charging icon, burn-in offset |
 | State-specific styles (pressed/checked transitions) | theme example |
-
-When the editor learns one of these, the matching cookbook example becomes a
-candidate for the samples set.
+| Animations beyond fade (rotate, position) | charging icon, burn-in offset |

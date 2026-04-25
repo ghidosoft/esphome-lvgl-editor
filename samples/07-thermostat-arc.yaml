@@ -1,0 +1,59 @@
+# Cookbook: "Semicircle thermostat dial" (arc variant)
+# https://esphome.io/cookbook/lvgl/#semicircle-thermostat-dial
+#
+# A round thermostat dial built around an `arc` widget with a centered
+# temperature label. Demonstrates: arc with min/max/value, rotation +
+# angle_range, indicator/knob parts, nested centered labels.
+
+esphome:
+  name: lvgl-sample-thermostat-arc
+
+display:
+  - dimensions:
+      width: 320
+      height: 240
+
+lvgl:
+  pages:
+    - id: main_page
+      bg_color: 0x0f172a
+      widgets:
+        - label:
+            x: 0
+            y: 18
+            align: TOP_MID
+            text: "Thermostat"
+            text_color: 0xe2e8f0
+
+        - arc:
+            id: temp_arc
+            align: CENTER
+            y: 10
+            width: 200
+            height: 200
+            min_value: 15
+            max_value: 30
+            value: 22
+            rotation: 135
+            angle_range: 270
+            arc_width: 10
+            arc_color: 0x1e293b
+            indicator:
+              arc_width: 10
+              arc_color: 0xfbbf24
+            knob:
+              bg_color: 0xfde68a
+              border_color: 0xfbbf24
+              border_width: 2
+            widgets:
+              - label:
+                  align: CENTER
+                  y: -8
+                  text: "22°"
+                  text_color: 0xf9fafb
+
+              - label:
+                  align: CENTER
+                  y: 22
+                  text: "Target"
+                  text_color: 0x94a3b8

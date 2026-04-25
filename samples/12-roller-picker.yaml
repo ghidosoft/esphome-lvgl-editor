@@ -1,0 +1,84 @@
+# Cookbook: "Roller picker"
+# https://esphome.io/cookbook/lvgl/#roller
+#
+# Two side-by-side `roller` widgets acting as a simple time picker (hour and
+# minute). Demonstrates: roller options list, visible_row_count, mode INFINITE,
+# selected part styling.
+
+esphome:
+  name: lvgl-sample-roller-picker
+
+display:
+  - dimensions:
+      width: 320
+      height: 240
+
+lvgl:
+  pages:
+    - id: main_page
+      bg_color: 0x0f172a
+      widgets:
+        - label:
+            x: 0
+            y: 16
+            align: TOP_MID
+            text: "Set alarm"
+            text_color: 0xe2e8f0
+
+        - obj:
+            align: CENTER
+            y: 10
+            width: 260
+            height: 160
+            bg_color: 0x1e293b
+            border_width: 0
+            radius: 10
+            pad_all: 12
+            layout:
+              type: FLEX
+              flex_flow: ROW
+              flex_align_main: SPACE_EVENLY
+              flex_align_cross: CENTER
+            widgets:
+              - roller:
+                  id: hour_roller
+                  width: 90
+                  height: 130
+                  visible_row_count: 3
+                  mode: INFINITE
+                  bg_color: 0x111827
+                  text_color: 0x94a3b8
+                  selected:
+                    bg_color: 0x2563eb
+                    text_color: 0xf9fafb
+                  options:
+                    - "06"
+                    - "07"
+                    - "08"
+                    - "09"
+                    - "10"
+                    - "11"
+                    - "12"
+                  selected_index: 1
+
+              - label:
+                  text: ":"
+                  text_color: 0xf9fafb
+
+              - roller:
+                  id: minute_roller
+                  width: 90
+                  height: 130
+                  visible_row_count: 3
+                  mode: INFINITE
+                  bg_color: 0x111827
+                  text_color: 0x94a3b8
+                  selected:
+                    bg_color: 0x2563eb
+                    text_color: 0xf9fafb
+                  options:
+                    - "00"
+                    - "15"
+                    - "30"
+                    - "45"
+                  selected_index: 0
