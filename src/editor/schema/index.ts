@@ -16,7 +16,7 @@ import { SPINNER_SCHEMA } from './spinner';
  * editor, group children are keyed by a dotted string (`"indicator.bg_color"`)
  * and share that same dotted form across the store, source map, and edit ops.
  */
-export type PropKind = 'string' | 'number' | 'size' | 'color' | 'enum' | 'align';
+export type PropKind = 'string' | 'number' | 'size' | 'color' | 'enum' | 'align' | 'bool';
 
 export interface SchemaEntry {
   key: string;

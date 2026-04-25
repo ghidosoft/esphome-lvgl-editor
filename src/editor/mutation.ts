@@ -1,5 +1,6 @@
 import type { EsphomeProject, WidgetId } from '../parser/types';
 import { splitKey } from './nestedKey';
+import type { ProjectOverrides } from './store';
 
 /**
  * Wire format for server-side edits. The server looks up the corresponding
@@ -213,6 +214,47 @@ export function buildEditOps(
   }
 
   return { ops, skipped };
+}
+
+/**
+ * Translate project-level overrides (display dimensions, theme.dark_mode) into
+ * edit ops. Always targets `project.sourcePath`; `display:` is treated as
+ * `display[0]` to mirror the parser. `setIn` on eemeli/yaml creates missing
+ * parent maps, so writing `lvgl.theme.dark_mode` works even when `theme:` is
+ * absent.
+ */
+export function buildProjectEditOps(
+  project: EsphomeProject,
+  ov: ProjectOverrides,
+): EditOp[] {
+  const file = project.sourcePath;
+  if (!file) return [];
+  const ops: EditOp[] = [];
+  if (ov.displayWidth !== undefined) {
+    ops.push({
+      op: 'set',
+      file,
+      yamlPath: ['display', 0, 'dimensions', 'width'],
+      newValue: ov.displayWidth,
+    });
+  }
+  if (ov.displayHeight !== undefined) {
+    ops.push({
+      op: 'set',
+      file,
+      yamlPath: ['display', 0, 'dimensions', 'height'],
+      newValue: ov.displayHeight,
+    });
+  }
+  if (ov.darkMode !== undefined) {
+    ops.push({
+      op: 'set',
+      file,
+      yamlPath: ['lvgl', 'theme', 'dark_mode'],
+      newValue: ov.darkMode,
+    });
+  }
+  return ops;
 }
 
 function coerceScalar(v: unknown): EditOp['newValue'] {

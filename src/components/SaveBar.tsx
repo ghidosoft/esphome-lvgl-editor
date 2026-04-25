@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { commitProject, postEdit } from '../client/api';
-import { buildEditOps } from '../editor/mutation';
+import { buildEditOps, buildProjectEditOps } from '../editor/mutation';
 import { useEditorStore } from '../editor/store';
 import type { EsphomeProject } from '../parser/types';
 
@@ -25,24 +25,33 @@ export function SaveBar({ project, projectName }: Props) {
   const widgetDeletions = useEditorStore((s) => s.widgetDeletions);
   const styleOverrides = useEditorStore((s) => s.styleOverrides);
   const styleDeletions = useEditorStore((s) => s.styleDeletions);
+  const projectOverrides = useEditorStore((s) => s.projectOverrides);
   const saveError = useEditorStore((s) => s.saveError);
   const setSaveError = useEditorStore((s) => s.setSaveError);
   const clearOverrides = useEditorStore((s) => s.clearOverrides);
 
   const queryClient = useQueryClient();
 
-  const { ops, skipped } = useMemo(
-    () =>
-      buildEditOps(
-        project,
-        widgetOverrides,
-        varOverrides,
-        widgetDeletions,
-        styleOverrides,
-        styleDeletions,
-      ),
-    [project, widgetOverrides, varOverrides, widgetDeletions, styleOverrides, styleDeletions],
-  );
+  const { ops, skipped } = useMemo(() => {
+    const base = buildEditOps(
+      project,
+      widgetOverrides,
+      varOverrides,
+      widgetDeletions,
+      styleOverrides,
+      styleDeletions,
+    );
+    const projectOps = buildProjectEditOps(project, projectOverrides);
+    return { ops: [...base.ops, ...projectOps], skipped: base.skipped };
+  }, [
+    project,
+    widgetOverrides,
+    varOverrides,
+    widgetDeletions,
+    styleOverrides,
+    styleDeletions,
+    projectOverrides,
+  ]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -69,7 +78,8 @@ export function SaveBar({ project, projectName }: Props) {
   const widgetCount = dirtyWidgetIds.size;
   const styleCount = dirtyStyleIds.size;
   const varCount = Object.keys(varOverrides).length;
-  const hasAnything = widgetCount + styleCount + varCount > 0;
+  const projectCount = Object.keys(projectOverrides).length;
+  const hasAnything = widgetCount + styleCount + varCount + projectCount > 0;
 
   const doSaveEvent = useEffectEvent(() => {
     if (ops.length === 0) return;
@@ -98,6 +108,7 @@ export function SaveBar({ project, projectName }: Props) {
             widgetCount > 0 ? `${widgetCount} widget${widgetCount === 1 ? '' : 's'}` : null,
             styleCount > 0 ? `${styleCount} style${styleCount === 1 ? '' : 's'}` : null,
             varCount > 0 ? `${varCount} variable${varCount === 1 ? '' : 's'}` : null,
+            projectCount > 0 ? `${projectCount} project setting${projectCount === 1 ? '' : 's'}` : null,
           ]
             .filter(Boolean)
             .join(' · ')}

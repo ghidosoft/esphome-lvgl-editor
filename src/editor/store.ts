@@ -13,6 +13,20 @@ import { deleteNested, setNested, splitKey } from './nestedKey';
 export type WidgetState = 'default' | 'pressed' | 'checked' | 'disabled';
 
 /**
+ * Project-level pending edits for "general" settings (display dimensions,
+ * theme). Independent from `widgetOverrides` because there's no `WidgetId` to
+ * key them on, and from `varOverrides` because they don't go through a
+ * substitution definition.
+ */
+export interface ProjectOverrides {
+  displayWidth?: number;
+  displayHeight?: number;
+  darkMode?: boolean;
+}
+
+export type ProjectOverrideKey = keyof ProjectOverrides;
+
+/**
  * Editor state shared by canvas, overlay, and side-panels.
  *
  * Two kinds of pending edits coexist:
@@ -30,7 +44,7 @@ export type WidgetState = 'default' | 'pressed' | 'checked' | 'disabled';
 export interface EditorState {
   selectedWidgetId: WidgetId | null;
   hitList: HitEntry[];
-  activeTab: 'properties' | 'variables' | 'styles';
+  activeTab: 'properties' | 'variables' | 'styles' | 'project';
   /** Forced LVGL state for the selected widget's preview. Reset on re-selection. */
   activeState: WidgetState;
   widgetOverrides: Record<WidgetId, Record<string, unknown>>;
@@ -41,11 +55,13 @@ export interface EditorState {
   widgetDeletions: Record<WidgetId, string[]>;
   /** Per-style set of prop keys pending removal. */
   styleDeletions: Record<string, string[]>;
+  /** Pending edits to display dimensions and theme. */
+  projectOverrides: ProjectOverrides;
   saveError: string | null;
 
   setSelected: (id: WidgetId | null) => void;
   setHitList: (list: HitEntry[]) => void;
-  setActiveTab: (tab: 'properties' | 'variables' | 'styles') => void;
+  setActiveTab: (tab: 'properties' | 'variables' | 'styles' | 'project') => void;
   setActiveState: (state: WidgetState) => void;
   /**
    * Update a widget property. Dispatches to `varOverrides` when the prop was
@@ -65,6 +81,11 @@ export interface EditorState {
   deleteStyleProp: (styleId: string, key: string) => void;
   /** Update a substitution's value directly (used by VariablesPanel). */
   updateVar: (name: string, value: string | undefined) => void;
+  /** Update a project-level setting (display, theme). `undefined` reverts. */
+  updateProjectSetting: <K extends ProjectOverrideKey>(
+    key: K,
+    value: ProjectOverrides[K] | undefined,
+  ) => void;
   clearOverrides: () => void;
   setSaveError: (e: string | null) => void;
 }
@@ -79,6 +100,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   styleOverrides: {},
   widgetDeletions: {},
   styleDeletions: {},
+  projectOverrides: {},
   saveError: null,
 
   // Reset the forced state whenever the selection changes — Chromium-style
@@ -168,6 +190,13 @@ export const useEditorStore = create<EditorState>((set) => ({
       else nextVars[name] = value;
       return { varOverrides: nextVars };
     }),
+  updateProjectSetting: (key, value) =>
+    set((s) => {
+      const next = { ...s.projectOverrides };
+      if (value === undefined) delete next[key];
+      else next[key] = value;
+      return { projectOverrides: next };
+    }),
   clearOverrides: () =>
     set({
       widgetOverrides: {},
@@ -175,6 +204,7 @@ export const useEditorStore = create<EditorState>((set) => ({
       widgetDeletions: {},
       styleOverrides: {},
       styleDeletions: {},
+      projectOverrides: {},
     }),
   setSaveError: (e) => set({ saveError: e }),
 }));
@@ -208,18 +238,21 @@ export function applyOverrides(
   widgetDeletions: Record<WidgetId, string[]> = {},
   styleOverrides: Record<string, Record<string, unknown>> = {},
   styleDeletions: Record<string, string[]> = {},
+  projectOverrides: ProjectOverrides = {},
 ): EsphomeProject {
   const hasWidgetOverrides = Object.keys(widgetOverrides).length > 0;
   const hasVarOverrides = Object.keys(varOverrides).length > 0;
   const hasWidgetDeletions = Object.keys(widgetDeletions).length > 0;
   const hasStyleOverrides = Object.keys(styleOverrides).length > 0;
   const hasStyleDeletions = Object.keys(styleDeletions).length > 0;
+  const hasProjectOverrides = Object.keys(projectOverrides).length > 0;
   const nothing =
     !hasWidgetOverrides &&
     !hasVarOverrides &&
     !hasWidgetDeletions &&
     !hasStyleOverrides &&
-    !hasStyleDeletions;
+    !hasStyleDeletions &&
+    !hasProjectOverrides;
   if (!project.pages.length && nothing) return project;
   if (nothing) return project;
 
@@ -249,7 +282,18 @@ export function applyOverrides(
 
   const nextStyles = applyStylePatches(project.styles, styleCombined, styleDeletions);
   const nextPages = project.pages.map((p) => overridePage(p, widgetCombined, widgetDeletions));
-  return { ...project, pages: nextPages, styles: nextStyles };
+  const nextDisplay =
+    projectOverrides.displayWidth !== undefined || projectOverrides.displayHeight !== undefined
+      ? {
+          width: projectOverrides.displayWidth ?? project.display.width,
+          height: projectOverrides.displayHeight ?? project.display.height,
+        }
+      : project.display;
+  const nextTheme =
+    projectOverrides.darkMode !== undefined
+      ? { darkMode: projectOverrides.darkMode }
+      : project.theme;
+  return { ...project, pages: nextPages, styles: nextStyles, display: nextDisplay, theme: nextTheme };
 }
 
 function applyStylePatches(

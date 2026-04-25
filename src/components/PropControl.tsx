@@ -35,7 +35,32 @@ export function PropControl({ entry, value, onChange, disabled }: Props) {
           disabled={disabled}
         />
       );
+    case 'bool':
+      return <BoolToggle value={value} onChange={onChange} disabled={disabled} />;
   }
+}
+
+function BoolToggle({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: unknown;
+  onChange: (v: unknown) => void;
+  disabled?: boolean;
+}) {
+  const checked = value === true || value === 'true';
+  return (
+    <label className="prop-input prop-input--bool">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span>{checked ? 'on' : 'off'}</span>
+    </label>
+  );
 }
 
 function StringInput({

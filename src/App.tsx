@@ -70,6 +70,7 @@ function ProjectShell({ projects }: { projects: { name: string; hasLvgl: boolean
   const widgetDeletions = useEditorStore((s) => s.widgetDeletions);
   const styleOverrides = useEditorStore((s) => s.styleOverrides);
   const styleDeletions = useEditorStore((s) => s.styleDeletions);
+  const projectOverrides = useEditorStore((s) => s.projectOverrides);
 
   const derivedProject = useMemo(
     () =>
@@ -81,9 +82,18 @@ function ProjectShell({ projects }: { projects: { name: string; hasLvgl: boolean
             widgetDeletions,
             styleOverrides,
             styleDeletions,
+            projectOverrides,
           )
         : null,
-    [project.data, widgetOverrides, varOverrides, widgetDeletions, styleOverrides, styleDeletions],
+    [
+      project.data,
+      widgetOverrides,
+      varOverrides,
+      widgetDeletions,
+      styleOverrides,
+      styleDeletions,
+      projectOverrides,
+    ],
   );
 
   // Default to first non-skip page (mirrors the device's startup page).
