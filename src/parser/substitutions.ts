@@ -1,12 +1,12 @@
-import type { ParseError } from './types';
-import { isOpaqueTag } from './types';
+import type { ParseError } from './types.js';
+import { isOpaqueTag } from './types.js';
 import {
   isOriginLeaf,
   stampOrigin,
   readOrigin,
   type OriginNode,
   type OriginLeaf,
-} from './sourceMap';
+} from './sourceMap.js';
 
 const VAR_RE = /\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
 /** Matches a scalar that is exactly one `${var}` and nothing else. */

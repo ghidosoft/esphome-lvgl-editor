@@ -1,0 +1,132 @@
+# Cookbook (adapted): "Page navigation footer"
+# https://esphome.io/cookbook/lvgl/#page-navigation-footer
+#
+# Two pages with a footer of buttons that navigate via on_click +
+# lvgl.page.show. The cookbook uses `buttonmatrix` (not yet supported by the
+# editor); this adaptation uses three regular buttons in a FLEX row.
+
+esphome:
+  name: lvgl-sample-multipage
+
+display:
+  - dimensions:
+      width: 320
+      height: 240
+
+lvgl:
+  pages:
+    - id: home_page
+      bg_color: 0x0f172a
+      widgets:
+        - label:
+            x: 0
+            y: 60
+            align: TOP_MID
+            text: "Home"
+            text_color: 0xe2e8f0
+
+        - label:
+            x: 0
+            y: 100
+            align: TOP_MID
+            text: "Welcome to the dashboard"
+            text_color: 0x94a3b8
+
+        - obj:
+            x: 0
+            y: -10
+            align: BOTTOM_MID
+            width: 300
+            height: 50
+            bg_color: 0x1e293b
+            radius: 8
+            border_width: 0
+            pad_all: 6
+            layout:
+              type: FLEX
+              flex_flow: ROW
+              flex_align_main: SPACE_EVENLY
+              flex_align_cross: CENTER
+            widgets:
+              - button:
+                  width: 80
+                  height: 36
+                  bg_color: 0x2563eb
+                  radius: 6
+                  on_click:
+                    - lvgl.page.show: home_page
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "Home"
+                        text_color: 0xeff6ff
+              - button:
+                  width: 80
+                  height: 36
+                  bg_color: 0x334155
+                  radius: 6
+                  on_click:
+                    - lvgl.page.show: settings_page
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "Settings"
+                        text_color: 0xe2e8f0
+
+    - id: settings_page
+      bg_color: 0x111827
+      widgets:
+        - label:
+            x: 0
+            y: 60
+            align: TOP_MID
+            text: "Settings"
+            text_color: 0xe2e8f0
+
+        - label:
+            x: 0
+            y: 100
+            align: TOP_MID
+            text: "Tap a footer button to switch page"
+            text_color: 0x94a3b8
+
+        - obj:
+            x: 0
+            y: -10
+            align: BOTTOM_MID
+            width: 300
+            height: 50
+            bg_color: 0x1e293b
+            radius: 8
+            border_width: 0
+            pad_all: 6
+            layout:
+              type: FLEX
+              flex_flow: ROW
+              flex_align_main: SPACE_EVENLY
+              flex_align_cross: CENTER
+            widgets:
+              - button:
+                  width: 80
+                  height: 36
+                  bg_color: 0x334155
+                  radius: 6
+                  on_click:
+                    - lvgl.page.show: home_page
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "Home"
+                        text_color: 0xe2e8f0
+              - button:
+                  width: 80
+                  height: 36
+                  bg_color: 0x2563eb
+                  radius: 6
+                  on_click:
+                    - lvgl.page.show: settings_page
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "Settings"
+                        text_color: 0xeff6ff

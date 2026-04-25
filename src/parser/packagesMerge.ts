@@ -1,5 +1,5 @@
-import { isOpaqueTag } from './types';
-import { stampOrigin, readOrigin, type OriginNode } from './sourceMap';
+import { isOpaqueTag } from './types.js';
+import { stampOrigin, readOrigin, type OriginNode } from './sourceMap.js';
 
 /**
  * ESPHome `packages:` merge semantics: each value resolves to a YAML document

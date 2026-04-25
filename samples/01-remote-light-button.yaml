@@ -1,0 +1,46 @@
+# Cookbook: "Remote light button"
+# https://esphome.io/cookbook/lvgl/#remote-light-button
+#
+# A single checkable button that toggles a "lamp" state, with a label below
+# reporting on/off. Demonstrates: button (checkable), label, on_click, basic
+# styling, alignment.
+
+esphome:
+  name: lvgl-sample-light-button
+
+display:
+  - dimensions:
+      width: 320
+      height: 240
+
+lvgl:
+  pages:
+    - id: main_page
+      bg_color: 0x111827
+      widgets:
+        - button:
+            id: lamp_btn
+            x: 0
+            y: -20
+            align: CENTER
+            width: 120
+            height: 60
+            checkable: true
+            bg_color: 0x1f2937
+            border_color: 0x6b7280
+            border_width: 2
+            radius: 12
+            text_color: 0xf9fafb
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "Lamp"
+                  text_color: 0xf9fafb
+
+        - label:
+            id: lamp_state
+            x: 0
+            y: 60
+            align: CENTER
+            text: "OFF"
+            text_color: 0x9ca3af

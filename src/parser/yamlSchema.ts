@@ -1,6 +1,6 @@
 import { parseDocument as yamlParseDocument, Document, Scalar } from 'yaml';
 import type { CollectionTag, ScalarTag } from 'yaml';
-import type { OpaqueTag } from './types';
+import type { OpaqueTag } from './types.js';
 
 /**
  * ESPHome custom scalar tags: `!include`, `!secret`, `!lambda`. The `yaml`

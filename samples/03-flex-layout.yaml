@@ -1,0 +1,75 @@
+# Cookbook: "Flex layout positioning"
+# https://esphome.io/cookbook/lvgl/#flex-layout-positioning
+#
+# A row of action buttons laid out via FLEX (no manual x/y). Demonstrates:
+# obj container with layout type FLEX, flex_flow ROW, pad_row gap, child
+# alignment.
+
+esphome:
+  name: lvgl-sample-flex
+
+display:
+  - dimensions:
+      width: 320
+      height: 240
+
+lvgl:
+  pages:
+    - id: main_page
+      bg_color: 0x111827
+      widgets:
+        - label:
+            x: 0
+            y: 24
+            align: TOP_MID
+            text: "Flex layout (ROW)"
+            text_color: 0xe5e7eb
+
+        - obj:
+            id: button_row
+            x: 0
+            y: -30
+            align: CENTER
+            width: 280
+            height: 80
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 8
+            layout:
+              type: FLEX
+              flex_flow: ROW
+              flex_align_main: SPACE_EVENLY
+              flex_align_cross: CENTER
+              pad_row: 8
+              pad_column: 8
+            widgets:
+              - button:
+                  width: 80
+                  height: 56
+                  bg_color: 0x10b981
+                  radius: 8
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "Open"
+                        text_color: 0x064e3b
+              - button:
+                  width: 80
+                  height: 56
+                  bg_color: 0xf59e0b
+                  radius: 8
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "Stop"
+                        text_color: 0x451a03
+              - button:
+                  width: 80
+                  height: 56
+                  bg_color: 0xef4444
+                  radius: 8
+                  widgets:
+                    - label:
+                        align: CENTER
+                        text: "Close"
+                        text_color: 0x450a0a

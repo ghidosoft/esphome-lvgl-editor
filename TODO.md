@@ -7,6 +7,8 @@ the tool gets used.
 
 - [ ] **`arc` widget**: used in LVGL for gauges / progress rings. Render similar to `spinner` but driven by `value` + `min_value`/`max_value`.
 - [ ] **`bar` widget**: horizontal progress bar (track + indicator). Like `slider` minus the knob.
+- [ ] **`switch` widget**: toggle with a sliding knob. Two-state, optionally bound to a Home Assistant entity.
+- [ ] **`checkbox` widget**: label + box, two-state, also used in dropdown/roller selection rows.
 - [ ] **Local image files**: support `file:` pointing at a disk path (serve via a `/__lvgl/asset/` endpoint sandboxed to `esphome/`).
 - [ ] **`grid_cell_*_align: CENTER/START/END`** non-STRETCH: only partially handled — verify against real usage.
 - [ ] **`pad_row`/`pad_column` on layout-less containers**: today only `pad_all` is honoured as inset; per-axis padding isn't.
@@ -22,6 +24,11 @@ the tool gets used.
 
 ## Medium-term (open features)
 
+- [ ] **`meter` widget**: tick scales with line/arc indicators. Powers the gauge / thermometer / analog clock cookbook examples. Needs a `lv_meter` mini-renderer (scales → ticks, indicators positioned by angle).
+- [ ] **`buttonmatrix` widget**: grid of buttons defined inline (used by page-nav footers, numeric keypads, theme example). Self-contained: a single widget node renders multiple cells.
+- [ ] **`spinbox` widget**: numeric input with up/down buttons (climate control, keypad).
+- [ ] **`dropdown` / `roller` widgets**: collapsible / scrollable option pickers.
+- [ ] **`top_layer` overlay slot**: separate render layer always drawn on top of the active page (used for boot screen, API status icon, persistent title bars). Needs a small additions to the page model so widgets in `lvgl.top_layer:` always paint last.
 - [ ] **Page navigation via `on_click: lvgl.page.show`**: clicking on the canvas should switch the active page. Turns the preview into a navigable prototype.
 - [ ] **Page-transition animations**: `FADE_IN`, `MOVE_LEFT` as a visual transition when switching pages (via `on_click` or sidebar).
 - [ ] **Animated spinner**: currently static at 270°, add rotation (RAF) for realism.
@@ -49,7 +56,7 @@ the tool gets used.
 - [ ] **Drag & drop**: reposition widgets, move them across containers, create new ones from a palette. Needs precise hit-testing (the reason we picked Canvas 2D over WASM).
 - [x] **Global style editor**: Styles tab with schema-driven controls + add/remove/var-backed write-back.
 - [ ] **Sensor simulator**: sliders to fake temperature/humidity/etc. without HA — useful for mockups.
-- [ ] **Public packaging**: ship as a CLI `npx esphome-lvgl-preview <path>` so it can be used against any ESPHome project, not just this repo.
+- [x] **Public packaging**: ship as a CLI `npx esphome-lvgl-editor [path]` so it can be used against any ESPHome project, not just this repo. Bundled `samples/` from the cookbook for `--demo` mode. (See `samples/README.md` for the cookbook gap that gates the actual `npm publish`.)
 - [ ] **Monorepo consolidation**: if it goes public, fold `scripts/merge-lvgl.mjs` into the same package and have it use `lvgl-editor/src/parser` (share the logic instead of duplicating it).
 
 ## Architectural notes for later

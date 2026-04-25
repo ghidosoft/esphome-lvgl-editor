@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist/cli",
+    "rootDir": "src",
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": false,
+    "types": ["node"]
+  },
+  "include": ["src/server/**/*.ts", "src/parser/**/*.ts"],
+  "exclude": ["src/client", "src/renderer", "src/main.tsx", "src/App.tsx"]
+}

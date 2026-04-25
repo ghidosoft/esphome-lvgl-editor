@@ -1,0 +1,51 @@
+# Cookbook: "Light brightness slider"
+# https://esphome.io/cookbook/lvgl/#light-brightness-slider
+#
+# A slider with a label above showing the current value. Demonstrates: slider
+# with min/max/value, label, font sizing via text_font, color tinting.
+
+esphome:
+  name: lvgl-sample-brightness
+
+display:
+  - dimensions:
+      width: 320
+      height: 240
+
+lvgl:
+  pages:
+    - id: main_page
+      bg_color: 0x0f172a
+      widgets:
+        - label:
+            id: title
+            x: 0
+            y: 30
+            align: TOP_MID
+            text: "Brightness"
+            text_color: 0xe2e8f0
+
+        - label:
+            id: brightness_value
+            x: 0
+            y: 70
+            align: TOP_MID
+            text: "65 %"
+            text_color: 0xfbbf24
+
+        - slider:
+            id: brightness_slider
+            x: 30
+            y: 140
+            width: 260
+            height: 20
+            min_value: 0
+            max_value: 100
+            value: 65
+            bg_color: 0x1e293b
+            indicator:
+              bg_color: 0xfbbf24
+            knob:
+              bg_color: 0xfde68a
+              border_color: 0xfbbf24
+              border_width: 2

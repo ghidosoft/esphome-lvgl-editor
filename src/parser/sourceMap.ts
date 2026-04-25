@@ -1,4 +1,4 @@
-import type { YamlPath, WidgetId } from './types';
+import type { YamlPath, WidgetId } from './types.js';
 
 /**
  * Source-map layer for the plain tree produced by the loader. We keep a second

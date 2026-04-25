@@ -1,13 +1,13 @@
 import { readFileSync, statSync } from 'node:fs';
 import { dirname, resolve, basename, extname } from 'node:path';
 import { isMap, isScalar, isSeq, type Node, type Document } from 'yaml';
-import { parseDocument, isOpaqueScalar, toOpaqueMarker } from './yamlSchema';
-import { mergePackages } from './packagesMerge';
-import { applySubstitutions, normalizeSubsMap } from './substitutions';
-import { normalizeProject } from './lvglNormalize';
-import { FileRegistry } from './fileRegistry';
-import { stampOrigin, type Origin, type OriginLeaf, type OriginNode } from './sourceMap';
-import type { EsphomeProject, ParseError, YamlPath } from './types';
+import { parseDocument, isOpaqueScalar, toOpaqueMarker } from './yamlSchema.js';
+import { mergePackages } from './packagesMerge.js';
+import { applySubstitutions, normalizeSubsMap } from './substitutions.js';
+import { normalizeProject } from './lvglNormalize.js';
+import { FileRegistry } from './fileRegistry.js';
+import { stampOrigin, type Origin, type OriginLeaf, type OriginNode } from './sourceMap.js';
+import type { EsphomeProject, ParseError, YamlPath } from './types.js';
 
 /**
  * Top-level entry point: read a main ESPHome YAML file and produce a
