@@ -28,10 +28,10 @@ lvgl:
             widgets:
               - label:
                   align: CENTER
-                  text: "Lamp"
+                  text: 'Lamp'
 
         - label:
             id: lamp_state
             align: CENTER
             y: 60
-            text: "OFF"
+            text: 'OFF'

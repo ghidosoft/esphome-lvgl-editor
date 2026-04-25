@@ -20,7 +20,7 @@ lvgl:
         - label:
             align: TOP_MID
             y: 18
-            text: "Arc dial"
+            text: 'Arc dial'
 
         - arc:
             id: dial
@@ -36,4 +36,4 @@ lvgl:
             widgets:
               - label:
                   align: CENTER
-                  text: "70"
+                  text: '70'

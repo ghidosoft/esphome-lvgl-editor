@@ -21,7 +21,7 @@ lvgl:
         - label:
             align: TOP_MID
             y: 16
-            text: "Set alarm"
+            text: 'Set alarm'
 
         - obj:
             align: CENTER
@@ -44,17 +44,17 @@ lvgl:
                   visible_row_count: 3
                   mode: INFINITE
                   options:
-                    - "06"
-                    - "07"
-                    - "08"
-                    - "09"
-                    - "10"
-                    - "11"
-                    - "12"
+                    - '06'
+                    - '07'
+                    - '08'
+                    - '09'
+                    - '10'
+                    - '11'
+                    - '12'
                   selected_index: 1
 
               - label:
-                  text: ":"
+                  text: ':'
 
               - roller:
                   id: minute_roller
@@ -63,8 +63,8 @@ lvgl:
                   visible_row_count: 3
                   mode: INFINITE
                   options:
-                    - "00"
-                    - "15"
-                    - "30"
-                    - "45"
+                    - '00'
+                    - '15'
+                    - '30'
+                    - '45'
                   selected_index: 0

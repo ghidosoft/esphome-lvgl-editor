@@ -35,11 +35,11 @@ lvgl:
               - label:
                   align: CENTER
                   y: -40
-                  text: "ESPHome"
+                  text: 'ESPHome'
 
               - label:
                   align: CENTER
-                  text: "Booting..."
+                  text: 'Booting...'
 
               - spinner:
                   align: CENTER

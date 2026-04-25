@@ -51,7 +51,9 @@ function measureChildren(
     const child = widget.children[i];
     const size = childSizes[i];
     const styles = ctx.project.styles;
-    const align = String(resolveProp(child, 'align', styles, ctx.theme) ?? 'TOP_LEFT').toUpperCase();
+    const align = String(
+      resolveProp(child, 'align', styles, ctx.theme) ?? 'TOP_LEFT',
+    ).toUpperCase();
     const { hAnchor, vAnchor } = anchorsOf(align);
     const dx = numProp(resolveProp(child, 'x', styles, ctx.theme), 0);
     const dy = numProp(resolveProp(child, 'y', styles, ctx.theme), 0);

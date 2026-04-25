@@ -21,7 +21,7 @@ lvgl:
             id: code_display
             align: TOP_MID
             y: 14
-            text: "----"
+            text: '----'
 
         - buttonmatrix:
             id: keypad
@@ -31,18 +31,18 @@ lvgl:
             height: 180
             rows:
               - buttons:
-                  - text: "1"
-                  - text: "2"
-                  - text: "3"
+                  - text: '1'
+                  - text: '2'
+                  - text: '3'
               - buttons:
-                  - text: "4"
-                  - text: "5"
-                  - text: "6"
+                  - text: '4'
+                  - text: '5'
+                  - text: '6'
               - buttons:
-                  - text: "7"
-                  - text: "8"
-                  - text: "9"
+                  - text: '7'
+                  - text: '8'
+                  - text: '9'
               - buttons:
-                  - text: "C"
-                  - text: "0"
-                  - text: "OK"
+                  - text: 'C'
+                  - text: '0'
+                  - text: 'OK'

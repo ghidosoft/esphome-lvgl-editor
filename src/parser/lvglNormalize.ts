@@ -16,7 +16,13 @@ import type {
   PropSource,
   SubstitutionEntry,
 } from './types.js';
-import { readOrigin, isOriginLeaf, makeWidgetId, type Origin, type OriginNode } from './sourceMap.js';
+import {
+  readOrigin,
+  isOriginLeaf,
+  makeWidgetId,
+  type Origin,
+  type OriginNode,
+} from './sourceMap.js';
 
 /**
  * Take a raw ESPHome doc (after package-merge + substitutions) plus its origin

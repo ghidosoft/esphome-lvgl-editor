@@ -24,9 +24,7 @@ if (argv.version) {
   process.exit(0);
 }
 
-const esphomeDir = argv.demo
-  ? samplesDir
-  : resolve(process.cwd(), argv.path ?? '.');
+const esphomeDir = argv.demo ? samplesDir : resolve(process.cwd(), argv.path ?? '.');
 
 if (!existsSync(esphomeDir) || !statSync(esphomeDir).isDirectory()) {
   process.stderr.write(`error: not a directory: ${esphomeDir}\n`);
@@ -60,9 +58,7 @@ const watcher = chokidar.watch(esphomeDir, {
   ignored: (p) => {
     const norm = p.replace(/\\/g, '/');
     return (
-      norm.includes('/.esphome/') ||
-      norm.includes('/merged/') ||
-      norm.endsWith('/secrets.yaml')
+      norm.includes('/.esphome/') || norm.includes('/merged/') || norm.endsWith('/secrets.yaml')
     );
   },
 });
@@ -102,7 +98,15 @@ process.on('SIGTERM', shutdown);
 // ---------- helpers ----------
 
 function parseArgs(args) {
-  const out = { path: undefined, port: undefined, host: undefined, demo: false, open: false, help: false, version: false };
+  const out = {
+    path: undefined,
+    port: undefined,
+    host: undefined,
+    demo: false,
+    open: false,
+    help: false,
+    version: false,
+  };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === '-h' || a === '--help') out.help = true;
@@ -154,9 +158,7 @@ function printHelp() {
 
 function countTopLevelYaml(dir) {
   try {
-    return readdirSync(dir).filter(
-      (f) => f.endsWith('.yaml') && f !== 'secrets.yaml',
-    ).length;
+    return readdirSync(dir).filter((f) => f.endsWith('.yaml') && f !== 'secrets.yaml').length;
   } catch {
     return 0;
   }
@@ -185,11 +187,7 @@ function listen(server, startPort, host) {
 
 function openBrowser(url) {
   const cmd =
-    process.platform === 'darwin'
-      ? 'open'
-      : process.platform === 'win32'
-        ? 'cmd'
-        : 'xdg-open';
+    process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'cmd' : 'xdg-open';
   const args = process.platform === 'win32' ? ['/c', 'start', '""', url] : [url];
   try {
     spawn(cmd, args, { detached: true, stdio: 'ignore' }).unref();

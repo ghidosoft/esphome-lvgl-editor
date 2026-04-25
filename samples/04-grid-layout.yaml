@@ -40,7 +40,7 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "21°C"
+                        text: '21°C'
               - obj:
                   grid_cell_row_pos: 0
                   grid_cell_column_pos: 1
@@ -49,7 +49,7 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "48 %"
+                        text: '48 %'
               - obj:
                   grid_cell_row_pos: 0
                   grid_cell_column_pos: 2
@@ -58,7 +58,7 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "1013"
+                        text: '1013'
               - obj:
                   grid_cell_row_pos: 1
                   grid_cell_column_pos: 0
@@ -68,4 +68,4 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "Living room"
+                        text: 'Living room'

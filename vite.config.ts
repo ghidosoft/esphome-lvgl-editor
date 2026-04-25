@@ -14,11 +14,7 @@ export default defineConfig(({ mode }) => {
       : resolve(__dirname, '../home-assistant/esphome');
 
   return {
-    plugins: [
-      react(),
-      babel({ presets: [reactCompilerPreset()] }),
-      lvglPlugin({ esphomeDir }),
-    ],
+    plugins: [react(), babel({ presets: [reactCompilerPreset()] }), lvglPlugin({ esphomeDir })],
     resolve: {
       alias: { '@': resolve(__dirname, 'src') },
     },

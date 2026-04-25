@@ -22,13 +22,13 @@ lvgl:
             id: title
             align: TOP_MID
             y: 30
-            text: "Brightness"
+            text: 'Brightness'
 
         - label:
             id: brightness_value
             align: TOP_MID
             y: 70
-            text: "65 %"
+            text: '65 %'
 
         - slider:
             id: brightness_slider

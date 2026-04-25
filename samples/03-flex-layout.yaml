@@ -20,7 +20,7 @@ lvgl:
         - label:
             align: TOP_MID
             y: 24
-            text: "Flex layout (ROW)"
+            text: 'Flex layout (ROW)'
 
         - obj:
             id: button_row
@@ -45,18 +45,18 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "Open"
+                        text: 'Open'
               - button:
                   width: 80
                   height: 56
                   widgets:
                     - label:
                         align: CENTER
-                        text: "Stop"
+                        text: 'Stop'
               - button:
                   width: 80
                   height: 56
                   widgets:
                     - label:
                         align: CENTER
-                        text: "Close"
+                        text: 'Close'

@@ -21,7 +21,7 @@ lvgl:
         - label:
             align: TOP_MID
             y: 40
-            text: "Living room"
+            text: 'Living room'
 
         - switch:
             id: light_switch
@@ -32,4 +32,4 @@ lvgl:
             id: light_state
             align: CENTER
             y: 60
-            text: "OFF"
+            text: 'OFF'

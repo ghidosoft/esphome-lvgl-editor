@@ -30,7 +30,10 @@ export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const ind: PartStyle = {
     fill: parseColor(resolvePartProp(w, 'indicator', 'bg_color', styles, theme), '#2196f3'),
     fillOpa: parseOpacity(resolvePartProp(w, 'indicator', 'bg_opa', styles, theme), 1),
-    borderColor: parseColor(resolvePartProp(w, 'indicator', 'border_color', styles, theme), '#000000'),
+    borderColor: parseColor(
+      resolvePartProp(w, 'indicator', 'border_color', styles, theme),
+      '#000000',
+    ),
     borderWidth: num(resolvePartProp(w, 'indicator', 'border_width', styles, theme), 0),
     borderOpa: parseOpacity(resolvePartProp(w, 'indicator', 'border_opa', styles, theme), 0),
     radius: num(resolvePartProp(w, 'indicator', 'radius', styles, theme), trackRadius),

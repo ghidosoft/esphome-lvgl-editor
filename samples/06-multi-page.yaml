@@ -21,12 +21,12 @@ lvgl:
         - label:
             align: TOP_MID
             y: 60
-            text: "Home"
+            text: 'Home'
 
         - label:
             align: TOP_MID
             y: 100
-            text: "Welcome to the dashboard"
+            text: 'Welcome to the dashboard'
 
         - obj:
             align: BOTTOM_MID
@@ -50,7 +50,7 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "Home"
+                        text: 'Home'
               - button:
                   width: 110
                   height: 44
@@ -59,19 +59,19 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "Settings"
+                        text: 'Settings'
 
     - id: settings_page
       widgets:
         - label:
             align: TOP_MID
             y: 60
-            text: "Settings"
+            text: 'Settings'
 
         - label:
             align: TOP_MID
             y: 100
-            text: "Tap a footer button to switch page"
+            text: 'Tap a footer button to switch page'
 
         - obj:
             align: BOTTOM_MID
@@ -95,7 +95,7 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "Home"
+                        text: 'Home'
               - button:
                   width: 110
                   height: 44
@@ -104,4 +104,4 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "Settings"
+                        text: 'Settings'

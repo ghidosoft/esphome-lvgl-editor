@@ -21,7 +21,7 @@ lvgl:
         - label:
             align: TOP_MID
             y: 18
-            text: "Notifications"
+            text: 'Notifications'
 
         - obj:
             align: CENTER
@@ -40,18 +40,18 @@ lvgl:
             widgets:
               - checkbox:
                   id: cb_email
-                  text: "Email alerts"
+                  text: 'Email alerts'
                   checked: true
 
               - checkbox:
                   id: cb_push
-                  text: "Push notifications"
+                  text: 'Push notifications'
 
               - checkbox:
                   id: cb_sms
-                  text: "SMS"
+                  text: 'SMS'
 
               - checkbox:
                   id: cb_digest
-                  text: "Weekly digest"
+                  text: 'Weekly digest'
                   checked: true

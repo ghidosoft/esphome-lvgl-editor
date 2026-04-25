@@ -21,7 +21,7 @@ lvgl:
         - label:
             align: TOP_MID
             y: 30
-            text: "Target temperature"
+            text: 'Target temperature'
 
         - obj:
             align: CENTER
@@ -45,7 +45,7 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "-"
+                        text: '-'
 
               - spinbox:
                   id: target_temp
@@ -69,4 +69,4 @@ lvgl:
                   widgets:
                     - label:
                         align: CENTER
-                        text: "+"
+                        text: '+'

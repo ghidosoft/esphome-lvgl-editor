@@ -86,7 +86,8 @@ export function createLvglRouter({ esphomeDir }: LvglRouterOptions): LvglRouter 
   }
 
   function handleProjectGet(req: IncomingMessage, res: ServerResponse, rawName: string) {
-    if (req.method && req.method !== 'GET') return sendJson(res, 405, { error: 'method not allowed' });
+    if (req.method && req.method !== 'GET')
+      return sendJson(res, 405, { error: 'method not allowed' });
     const name = decodeURIComponent(rawName.split('?')[0]);
     if (!name || /[/\\]/.test(name) || name.includes('..')) {
       return sendJson(res, 400, { error: 'invalid project name' });
@@ -120,9 +121,7 @@ export function createLvglRouter({ esphomeDir }: LvglRouterOptions): LvglRouter 
     for (const op of ops) {
       const abs = resolve(op.file);
       const safe =
-        abs.startsWith(esphomeDir + '/') ||
-        abs.startsWith(esphomeDir + '\\') ||
-        abs === esphomeDir;
+        abs.startsWith(esphomeDir + '/') || abs.startsWith(esphomeDir + '\\') || abs === esphomeDir;
       if (!safe) return sendJson(res, 400, { error: `path outside esphomeDir: ${abs}` });
       if (!entry.registry.has(abs))
         return sendJson(res, 400, { error: `file not in project: ${abs}` });
@@ -188,7 +187,8 @@ export function createLvglRouter({ esphomeDir }: LvglRouterOptions): LvglRouter 
   }
 
   function handleEvents(req: IncomingMessage, res: ServerResponse) {
-    if (req.method && req.method !== 'GET') return sendJson(res, 405, { error: 'method not allowed' });
+    if (req.method && req.method !== 'GET')
+      return sendJson(res, 405, { error: 'method not allowed' });
     res.statusCode = 200;
     res.setHeader('content-type', 'text/event-stream');
     res.setHeader('cache-control', 'no-cache, no-transform');
@@ -223,12 +223,16 @@ export function createLvglRouter({ esphomeDir }: LvglRouterOptions): LvglRouter 
     }
     // /__lvgl/edit
     if (url === '/__lvgl/edit' || url.startsWith('/__lvgl/edit?')) {
-      handleEdit(req, res).catch((e: unknown) => sendJson(res, 500, { error: (e as Error).message }));
+      handleEdit(req, res).catch((e: unknown) =>
+        sendJson(res, 500, { error: (e as Error).message }),
+      );
       return;
     }
     // /__lvgl/commit
     if (url === '/__lvgl/commit' || url.startsWith('/__lvgl/commit?')) {
-      handleCommit(req, res).catch((e: unknown) => sendJson(res, 500, { error: (e as Error).message }));
+      handleCommit(req, res).catch((e: unknown) =>
+        sendJson(res, 500, { error: (e as Error).message }),
+      );
       return;
     }
     // /__lvgl/events  (SSE)
