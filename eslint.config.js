@@ -53,7 +53,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.js'],
+    files: ['**/*.mjs'],
     languageOptions: {
       globals: globals.node,
     },
