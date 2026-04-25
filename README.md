@@ -71,8 +71,9 @@ live via SSE and refresh the preview without a page reload.
 git clone https://github.com/ghidosoft/esphome-lvgl-editor
 cd esphome-lvgl-editor
 npm install
-npm run dev      # Vite dev server with HMR
-npm run build    # production bundle (client + CLI server)
+npm run dev       # Vite dev server with HMR (reads from ../home-assistant/esphome)
+npm run dev:demo  # Vite dev server pointed at the bundled samples/
+npm run build     # production bundle (client + CLI server)
 npm run lint
 ```
 
