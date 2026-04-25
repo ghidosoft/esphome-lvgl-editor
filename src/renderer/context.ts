@@ -15,6 +15,8 @@ export interface RenderContext {
   theme: DefaultTheme;
   /** Triggered by widgets that load remote resources (images) — schedules a re-render. */
   requestRepaint: () => void;
+  /** Monotonic timestamp (performance.now()) of the current paint, for time-driven widgets like spinner. */
+  frameTimeMs: number;
   /** When set, render the matching widget as if this LVGL state were active. */
   activeState?: PreviewState;
   activeStateWidgetId?: WidgetId;

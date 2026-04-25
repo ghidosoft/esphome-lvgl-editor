@@ -41,6 +41,7 @@ export class CanvasStage {
   private repaintScheduled = false;
   private hitList: HitEntry[] = [];
   private onHitListCb?: (list: HitEntry[]) => void;
+  private animationRafId: number | null = null;
 
   attach(canvas: HTMLCanvasElement): void {
     this.canvas = canvas;
@@ -50,6 +51,7 @@ export class CanvasStage {
   }
 
   detach(): void {
+    this.stopAnimation();
     this.canvas = null;
     this.currentPage = null;
     this.currentProject = null;
@@ -63,6 +65,7 @@ export class CanvasStage {
     this.currentPage = page;
     this.currentOptions = options;
     this.paint();
+    this.syncAnimationLoop();
   }
 
   /** Latest hit-list (widgetId + absolute box), ordered by paint order (root first). */
@@ -83,7 +86,36 @@ export class CanvasStage {
     });
   };
 
-  private paint(): void {
+  /**
+   * Animation frame loop: runs while the current page contains any animated
+   * widget (today: spinner). Geometry doesn't change frame-to-frame, so the
+   * hit-list is left alone — the loop only repaints pixels.
+   */
+  private syncAnimationLoop(): void {
+    const needs = this.currentPage ? hasAnimatedWidgets(this.currentPage.widgets) : false;
+    if (needs && this.animationRafId === null) {
+      const tick = () => {
+        if (!this.canvas || !this.currentPage) {
+          this.animationRafId = null;
+          return;
+        }
+        this.paint({ skipHitNotify: true });
+        this.animationRafId = requestAnimationFrame(tick);
+      };
+      this.animationRafId = requestAnimationFrame(tick);
+    } else if (!needs && this.animationRafId !== null) {
+      this.stopAnimation();
+    }
+  }
+
+  private stopAnimation(): void {
+    if (this.animationRafId !== null) {
+      cancelAnimationFrame(this.animationRafId);
+      this.animationRafId = null;
+    }
+  }
+
+  private paint(opts: { skipHitNotify?: boolean } = {}): void {
     const canvas = this.canvas;
     const project = this.currentProject;
     const page = this.currentPage;
@@ -110,6 +142,7 @@ export class CanvasStage {
       project,
       theme,
       requestRepaint: this.requestRepaint,
+      frameTimeMs: performance.now(),
       activeState,
       activeStateWidgetId,
     };
@@ -119,8 +152,21 @@ export class CanvasStage {
       renderWidget(widget, root, undefined, ctx, hits, 0);
     }
     this.hitList = hits;
-    this.onHitListCb?.(hits);
+    if (!opts.skipHitNotify) this.onHitListCb?.(hits);
   }
+}
+
+/**
+ * Walks the widget tree to detect any widget that needs the per-frame loop.
+ * Currently spinner is the only animated widget; extend here when others (e.g.
+ * page-transition animations) need the same treatment.
+ */
+function hasAnimatedWidgets(widgets: LvglWidget[]): boolean {
+  for (const w of widgets) {
+    if (w.type === 'spinner') return true;
+    if (w.children.length > 0 && hasAnimatedWidgets(w.children)) return true;
+  }
+  return false;
 }
 
 /**

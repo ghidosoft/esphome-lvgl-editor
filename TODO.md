@@ -31,7 +31,6 @@ the tool gets used.
 - [ ] **`top_layer` overlay slot**: separate render layer always drawn on top of the active page (used for boot screen, API status icon, persistent title bars). Needs a small additions to the page model so widgets in `lvgl.top_layer:` always paint last.
 - [ ] **Page navigation via `on_click: lvgl.page.show`**: clicking on the canvas should switch the active page. Turns the preview into a navigable prototype.
 - [ ] **Page-transition animations**: `FADE_IN`, `MOVE_LEFT` as a visual transition when switching pages (via `on_click` or sidebar).
-- [ ] **Animated spinner**: currently static at 270°, add rotation (RAF) for realism.
 - [ ] **Interactive sliders/bars**: dragging the knob in the preview updates a local `value` (no write-back to YAML) — useful for testing ranges.
 - [ ] **Real embedded fonts**: compile Montserrat to bitmaps at the sizes used by the display (e.g. 36/28/14/12/10) for pixel-perfect fidelity, instead of approximating via Google Fonts in the browser.
 - [ ] **Material Symbols aliases**: a small `glyph_xxx → code point` dictionary so YAML can reference icons by name instead of hardcoded `\uE...` escapes.

@@ -1,6 +1,7 @@
 import { COMMON_SCHEMA, COMMON_STATE_GROUPS } from './common';
 import { LABEL_SCHEMA } from './label';
 import { SLIDER_SCHEMA } from './slider';
+import { SPINNER_SCHEMA } from './spinner';
 
 /**
  * Widget-type → editable property metadata. Keeps UI controls decoupled from
@@ -52,4 +53,5 @@ export function getSchema(widgetType: string): PropertySchema {
 const SPECIFIC_SCHEMAS: Record<string, PropertySchema> = {
   label: LABEL_SCHEMA,
   slider: SLIDER_SCHEMA,
+  spinner: SPINNER_SCHEMA,
 };

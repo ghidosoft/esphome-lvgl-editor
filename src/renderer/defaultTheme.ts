@@ -130,9 +130,16 @@ function buildTheme(t: Tokens): DefaultTheme {
     },
     spinner: {
       main: {
+        arc_color: t.grey,
+        arc_opa: 1,
+        arc_width: 10,
+        arc_rounded: true,
+      },
+      indicator: {
         arc_color: t.primary,
-        arc_color_track: t.grey,
-        arc_width: 15,
+        arc_opa: 1,
+        arc_width: 10,
+        arc_rounded: true,
       },
     },
   };
