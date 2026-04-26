@@ -72,7 +72,7 @@ export function PropertyRow({
           <button
             type="button"
             className="prop-row__btn"
-            title="Revert to source"
+            title={pendingDelete ? 'Cancel pending removal' : 'Revert to source'}
             onClick={onRevert}
           >
             ↺

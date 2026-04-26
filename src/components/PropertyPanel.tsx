@@ -406,10 +406,18 @@ function InlineCell({
       className={
         'inline-cell' +
         (state.hasOverride ? ' inline-cell--dirty' : '') +
+        (state.pendingDelete ? ' inline-cell--pending-delete' : '') +
         (!state.existsNow && !state.hasOverride ? ' inline-cell--unset' : '')
       }
     >
-      <span className="inline-cell__label" title={state.displayLabel}>
+      <span
+        className="inline-cell__label"
+        title={
+          state.pendingDelete
+            ? `${state.displayLabel} — pending removal`
+            : state.displayLabel
+        }
+      >
         {cellLabel}
       </span>
       <PropControl
@@ -424,7 +432,12 @@ function InlineCell({
         </span>
       )}
       {state.hasOverride && (
-        <button type="button" className="prop-row__btn" title="Revert to source" onClick={onRevert}>
+        <button
+          type="button"
+          className="prop-row__btn"
+          title={state.pendingDelete ? 'Cancel pending removal' : 'Revert to source'}
+          onClick={onRevert}
+        >
           ↺
         </button>
       )}
