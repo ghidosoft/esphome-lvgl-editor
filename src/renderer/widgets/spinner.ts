@@ -1,4 +1,5 @@
 import type { LvglWidget } from '../../parser/types';
+import { contentBox } from '../boxes';
 import { parseColor, parseOpacity, withAlpha } from '../colors';
 import type { Box, RenderContext } from '../context';
 import { resolvePartProp, resolveProp } from '../styles';
@@ -47,10 +48,13 @@ export function renderSpinner(w: LvglWidget, box: Box, ctx: RenderContext): Box 
   const eased = phase * phase * (3 - 2 * phase); // smoothstep, mirrors lv_anim_path_ease_in_out
   const rotationRad = eased * Math.PI * 2;
 
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
+  // Padding insets the arc circle from the widget's outer box (LVGL arc
+  // semantics: pad_* on the main style shrinks the drawn radius).
+  const inner = contentBox(box, w, styles, theme);
+  const cx = inner.x + inner.width / 2;
+  const cy = inner.y + inner.height / 2;
   const maxStroke = Math.max(mainWidth, indWidth);
-  const r = Math.max(0, Math.min(box.width, box.height) / 2 - maxStroke / 2);
+  const r = Math.max(0, Math.min(inner.width, inner.height) / 2 - maxStroke / 2);
 
   const c = ctx.ctx;
   c.save();

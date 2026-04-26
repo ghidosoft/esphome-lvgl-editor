@@ -1,4 +1,5 @@
 import type { LvglWidget } from '../../parser/types';
+import { contentBox } from '../boxes';
 import { parseColor, parseOpacity, withAlpha } from '../colors';
 import type { Box, RenderContext } from '../context';
 import { resolvePartProp, resolveProp } from '../styles';
@@ -38,8 +39,13 @@ export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
     borderOpa: parseOpacity(resolvePartProp(w, 'indicator', 'border_opa', styles, theme), 0),
     radius: num(resolvePartProp(w, 'indicator', 'radius', styles, theme), trackRadius),
   };
+  // Padding insets the indicator and knob from the track edges (LVGL
+  // semantics: pad_* on the slider's main style affect the indicator's
+  // available range). The track fills the outer box.
+  const inner = contentBox(box, w, styles, theme);
+
   // LVGL knob default is a circle (radius ≥ half the knob's short side).
-  const knobHalf = box.height * 0.9;
+  const knobHalf = inner.height * 0.9;
   const kn: PartStyle = {
     fill: parseColor(resolvePartProp(w, 'knob', 'bg_color', styles, theme), '#2196f3'),
     fillOpa: parseOpacity(resolvePartProp(w, 'knob', 'bg_opa', styles, theme), 1),
@@ -51,18 +57,18 @@ export function renderSlider(w: LvglWidget, box: Box, ctx: RenderContext): Box {
 
   const c = ctx.ctx;
   c.save();
-  // Track
+  // Track on the outer box.
   fillRect(c, box.x, box.y, box.width, box.height, track);
-  // Indicator
-  const indWidth = box.width * ratio;
+  // Indicator inset by padding.
+  const indWidth = inner.width * ratio;
   if (indWidth > 0) {
-    fillRect(c, box.x, box.y, indWidth, box.height, ind);
+    fillRect(c, inner.x, inner.y, indWidth, inner.height, ind);
   }
   // Knob — a rounded square centered on the indicator edge. Radius clamps to
   // half the side, so the default (knobHalf) still gives a circle.
   const knobSide = knobHalf * 2;
-  const knobX = box.x + indWidth - knobHalf;
-  const knobY = box.y + box.height / 2 - knobHalf;
+  const knobX = inner.x + indWidth - knobHalf;
+  const knobY = inner.y + inner.height / 2 - knobHalf;
   fillRect(c, knobX, knobY, knobSide, knobSide, kn);
   c.restore();
   return box;

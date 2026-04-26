@@ -1,3 +1,5 @@
+import { COMMON_SCHEMA } from './common';
+
 /**
  * Maps schema entry keys to UI sections in the property inspector. The schema
  * stays a flat bag of entries; rendering re-buckets them into semantic groups
@@ -105,4 +107,41 @@ export function isStateAware(bareKey: string): boolean {
 
 export function getSection(bareKey: string, fallback: SectionId = 'widget'): SectionId {
   return SECTION_MAP[bareKey] ?? fallback;
+}
+
+/**
+ * Dev-only invariant: every COMMON_SCHEMA entry must have a SECTION_MAP
+ * mapping. Common props are widget-agnostic styling (Layout/Spacing/Background/
+ * Border/Shape/Text); falling through to "Widget" silently would scatter
+ * universal props into the per-widget bucket. Widget-specific schemas (label,
+ * slider, …) are exempt — they're allowed to fall back to "Widget".
+ *
+ * Runs once at module load. No-op in production.
+ */
+function checkCommonSchemaCoverage(): void {
+  const missing: string[] = [];
+  for (const item of COMMON_SCHEMA) {
+    if ('kind' in item && item.kind === 'group') continue;
+    if (!(item.key in SECTION_MAP)) missing.push(item.key);
+  }
+  if (missing.length > 0) {
+    console.error(
+      '[inspector] COMMON_SCHEMA entries missing in SECTION_MAP — they will fall back to the "Widget" section: ' +
+        missing.join(', '),
+    );
+  }
+  // Keep STATE_AWARE_KEYS and SECTION_MAP in sync: every state-aware key must
+  // resolve to a known section. If someone adds a state-aware key without a
+  // section, STATE_AWARE_SECTIONS would silently drop it.
+  for (const k of STATE_AWARE_KEYS) {
+    if (!(k in SECTION_MAP)) {
+      console.error(
+        `[inspector] STATE_AWARE key "${k}" missing in SECTION_MAP — its section pill won't appear.`,
+      );
+    }
+  }
+}
+
+if (import.meta.env?.DEV) {
+  checkCommonSchemaCoverage();
 }
