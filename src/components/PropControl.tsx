@@ -30,6 +30,7 @@ export function PropControl({ entry, value, onChange, disabled }: Props) {
           min={entry.min}
           max={entry.max}
           unit={entry.unit}
+          slider={entry.slider}
         />
       );
     case 'size':

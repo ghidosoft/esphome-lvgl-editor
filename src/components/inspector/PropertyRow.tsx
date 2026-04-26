@@ -7,6 +7,8 @@ export interface VarBinding {
 
 interface Props {
   label: string;
+  /** Optional inline icon rendered before the label (e.g. pad/radius glyph). */
+  icon?: ReactNode;
   dirty?: boolean;
   unset?: boolean;
   pendingDelete?: boolean;
@@ -32,6 +34,7 @@ interface Props {
  */
 export function PropertyRow({
   label,
+  icon,
   dirty,
   unset,
   pendingDelete,
@@ -57,8 +60,9 @@ export function PropertyRow({
 
   return (
     <div className={rowClass}>
-      <div className="prop-row__key">
-        {label}
+      <div className={'prop-row__key' + (icon ? ' prop-row__key--with-icon' : '')}>
+        {icon}
+        <span className="prop-row__label">{label}</span>
         {dirty && <span className="prop-row__dirty-dot" title="unsaved change" />}
         {unset && <span className="prop-row__unset-tag">unset</span>}
       </div>

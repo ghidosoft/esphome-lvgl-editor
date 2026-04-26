@@ -1,5 +1,11 @@
 import { toText, useDraftCommit } from '../useDraftCommit';
 
+interface SliderConfig {
+  min: number;
+  max: number;
+  step?: number;
+}
+
 interface Props {
   value: unknown;
   onChange: (v: unknown) => void;
@@ -8,20 +14,38 @@ interface Props {
   max?: number;
   step?: number;
   unit?: string;
+  /** When set, renders a range track alongside the numeric input. */
+  slider?: SliderConfig;
 }
 
-export function NumericField({ value, onChange, disabled, min, max, step, unit }: Props) {
+export function NumericField({ value, onChange, disabled, min, max, step, unit, slider }: Props) {
   const { draft, setDraft, commit } = useDraftCommit(
     value,
     toText,
     (s) => (s === '' ? undefined : Number(s)),
     onChange,
   );
+
+  const numeric = typeof value === 'number' ? value : Number(toText(value));
+  const sliderValue = Number.isFinite(numeric) ? numeric : (slider?.min ?? 0);
+
   return (
     <div className="prop-input-group">
+      {slider && (
+        <input
+          type="range"
+          className="prop-input__range"
+          value={sliderValue}
+          disabled={disabled}
+          min={slider.min}
+          max={slider.max}
+          step={slider.step ?? 1}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+      )}
       <input
         type="number"
-        className="prop-input"
+        className="prop-input prop-input--number"
         value={draft}
         disabled={disabled}
         min={min}

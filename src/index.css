@@ -808,6 +808,141 @@ body,
   background: transparent;
   cursor: pointer;
 }
+.prop-input--number {
+  flex: 0 1 70px;
+  min-width: 50px;
+}
+.prop-input__range {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+.prop-input--micro {
+  flex: 1;
+  padding: 3px 4px;
+  text-align: center;
+  font-size: 11px;
+  min-width: 0;
+}
+
+/* ---------- Inspector icon ---------- */
+.inspector-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.prop-row__key--with-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prop-row__key--with-icon .inspector-icon {
+  color: var(--text-muted);
+}
+.prop-row__label {
+  display: inline;
+}
+
+/* ---------- Inline 2-up cells (x/y, width/height) ---------- */
+.prop-row--inline {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  padding: 6px 10px;
+}
+.inline-cell {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.inline-cell__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.inline-cell--dirty .inline-cell__label {
+  color: var(--accent);
+}
+.inline-cell--unset .inline-cell__label {
+  opacity: 0.6;
+}
+.inline-cell--unset .prop-input {
+  opacity: 0.7;
+}
+.inline-cell__var {
+  font-size: 9px;
+  color: var(--warn);
+  background: rgba(255, 159, 10, 0.12);
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ---------- Dimension grid (padding T/R/B/L) ---------- */
+.prop-row--dimension .prop-row__control--dimension {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dim-grid__lock {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+.dim-grid__lock:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+.dim-grid__lock--on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(58, 160, 255, 0.1);
+}
+.dim-grid__cells {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  flex: 1;
+}
+.dim-grid__cell {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.dim-grid__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  width: 10px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.dim-grid__cell--dirty .dim-grid__label {
+  color: var(--accent);
+}
+.dim-grid__cell--dirty .prop-input--micro {
+  border-color: var(--accent);
+}
 .prop-row--dirty {
   box-shadow: inset 2px 0 0 var(--accent);
 }

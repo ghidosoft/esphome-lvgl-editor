@@ -26,6 +26,8 @@ import { PropertyRow, type VarBinding } from './inspector/PropertyRow';
 import { PropertyGroup } from './inspector/PropertyGroup';
 import { ReadOnlyRow } from './inspector/ReadOnlyRow';
 import { InspectorHeader } from './inspector/InspectorHeader';
+import { Icon } from './inspector/Icon';
+import { DimensionGrid, type DimensionSide } from './inspector/fields/DimensionGrid';
 
 interface Props {
   project: EsphomeProject;
@@ -76,11 +78,10 @@ interface RenderableSection {
  * collapsible group with persisted open-state. The state selector at the top
  * multiplexes state-aware entries (bg_color, border_*, radius, text_*) into
  * the active LVGL state's namespace, replacing the previous trio of trailing
- * "Pressed/Checked/Disabled" groups.
- *
- * Var-backed props are editable (changes flow to the substitution); templates
- * stay read-only. Each editable row has a revert button (↺) when dirty, and a
- * remove button (×) when the prop is currently defined in the source.
+ * "Pressed/Checked/Disabled" groups. Schema hints drive compound controls:
+ * `inline:'half'` packs entries into 2-up rows, `linkedGroup` collapses them
+ * into a DimensionGrid, `slider` promotes a number to numeric+slider, `icon`
+ * surfaces a glyph next to the label.
  */
 export function PropertyPanel({ project }: Props) {
   const selectedWidgetId = useEditorStore((s) => s.selectedWidgetId);
@@ -158,6 +159,7 @@ export function PropertyPanel({ project }: Props) {
       <PropertyRow
         key={state.fullKey}
         label={state.displayLabel}
+        icon={entry.icon ? <Icon name={entry.icon} /> : undefined}
         dirty={state.hasOverride}
         unset={!state.existsNow && !state.hasOverride}
         pendingDelete={state.pendingDelete}
@@ -180,6 +182,56 @@ export function PropertyPanel({ project }: Props) {
     );
   };
 
+  const renderInlinePair = (entries: RenderableEntry[]): ReactNode => (
+    <div className="prop-row prop-row--inline" key={entries.map((e) => e.state.fullKey).join(':')}>
+      {entries.map((e) => (
+        <InlineCell
+          key={e.state.fullKey}
+          entry={e.entry}
+          state={e.state}
+          onChange={(v) => updateProp(project, selectedWidgetId, e.state.fullKey, v)}
+          onRevert={() => updateProp(project, selectedWidgetId, e.state.fullKey, undefined)}
+        />
+      ))}
+    </div>
+  );
+
+  const renderLinkedGroup = (
+    groupName: string,
+    entries: RenderableEntry[],
+  ): ReactNode | ReactNode[] => {
+    if (groupName === 'padding') {
+      const sides: DimensionSide[] = entries.map((e) => ({
+        key: e.state.fullKey,
+        label: e.entry.label ?? e.state.displayLabel,
+        value: e.state.effective,
+        dirty: e.state.hasOverride,
+        disabled: e.state.disabled,
+        origin: e.state.source?.file,
+      }));
+      const dirtyKeys = entries.filter((e) => e.state.hasOverride).map((e) => e.state.fullKey);
+      return (
+        <DimensionGrid
+          key={`linked-${groupName}`}
+          sides={sides}
+          iconName="pad"
+          groupLabel="padding"
+          linkPrefKey="padding"
+          onSideChange={(key, v) => updateProp(project, selectedWidgetId, key, v)}
+          onAllChange={(v) =>
+            entries.forEach((e) => updateProp(project, selectedWidgetId, e.state.fullKey, v))
+          }
+          onRevertAll={
+            dirtyKeys.length > 0
+              ? () => dirtyKeys.forEach((k) => updateProp(project, selectedWidgetId, k, undefined))
+              : undefined
+          }
+        />
+      );
+    }
+    return entries.map(renderEntry);
+  };
+
   const renderItem = (item: RenderableItem): ReactNode => {
     if (item.kind === 'entry') return renderEntry(item);
     return (
@@ -193,6 +245,59 @@ export function PropertyPanel({ project }: Props) {
         {item.rows.map(renderEntry)}
       </PropertyGroup>
     );
+  };
+
+  const renderSectionContents = (items: RenderableItem[]): ReactNode[] => {
+    const out: ReactNode[] = [];
+    let inlineQueue: RenderableEntry[] = [];
+    let linkedQueue: { name: string; entries: RenderableEntry[] } | null = null;
+
+    const flushInline = () => {
+      while (inlineQueue.length >= 2) {
+        out.push(renderInlinePair(inlineQueue.splice(0, 2)));
+      }
+      if (inlineQueue.length === 1) {
+        out.push(renderEntry(inlineQueue[0]));
+        inlineQueue = [];
+      }
+    };
+    const flushLinked = () => {
+      if (!linkedQueue) return;
+      const node = renderLinkedGroup(linkedQueue.name, linkedQueue.entries);
+      if (Array.isArray(node)) out.push(...node);
+      else out.push(node);
+      linkedQueue = null;
+    };
+
+    for (const item of items) {
+      if (item.kind === 'subgroup') {
+        flushInline();
+        flushLinked();
+        out.push(renderItem(item));
+        continue;
+      }
+      const entry = item.entry;
+      if (entry.inline === 'half') {
+        flushLinked();
+        inlineQueue.push(item);
+        continue;
+      }
+      if (entry.linkedGroup) {
+        flushInline();
+        if (!linkedQueue || linkedQueue.name !== entry.linkedGroup) {
+          flushLinked();
+          linkedQueue = { name: entry.linkedGroup, entries: [] };
+        }
+        linkedQueue.entries.push(item);
+        continue;
+      }
+      flushInline();
+      flushLinked();
+      out.push(renderEntry(item));
+    }
+    flushInline();
+    flushLinked();
+    return out;
   };
 
   const schemaKeys = collectSchemaKeys(schema);
@@ -248,7 +353,7 @@ export function PropertyPanel({ project }: Props) {
               ) : undefined
             }
           >
-            {section.items.map(renderItem)}
+            {renderSectionContents(section.items)}
           </PropertyGroup>
         ))}
 
@@ -275,6 +380,49 @@ function StatePill({ state }: { state: WidgetState }) {
     <span className="prop-group__state-pill" title={`Editing :${state} state`}>
       :{state}
     </span>
+  );
+}
+
+function InlineCell({
+  entry,
+  state,
+  onChange,
+  onRevert,
+}: {
+  entry: SchemaEntry;
+  state: RowState;
+  onChange: (v: unknown) => void;
+  onRevert: () => void;
+}) {
+  const cellLabel = entry.label ?? state.displayLabel;
+  return (
+    <div
+      className={
+        'inline-cell' +
+        (state.hasOverride ? ' inline-cell--dirty' : '') +
+        (!state.existsNow && !state.hasOverride ? ' inline-cell--unset' : '')
+      }
+    >
+      <span className="inline-cell__label" title={state.displayLabel}>
+        {cellLabel}
+      </span>
+      <PropControl
+        entry={entry}
+        value={state.effective}
+        onChange={onChange}
+        disabled={state.disabled}
+      />
+      {state.varBinding && (
+        <span className="inline-cell__var" title={`Bound to \${${state.varBinding.name}}`}>
+          var
+        </span>
+      )}
+      {state.hasOverride && (
+        <button type="button" className="prop-row__btn" title="Revert to source" onClick={onRevert}>
+          ↺
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -375,10 +523,7 @@ function filterSections(
 
 function collectSchemaKeys(schema: SchemaItem[]): Set<string> {
   const keys = new Set<string>();
-  for (const item of schema) {
-    if (isGroup(item)) keys.add(item.key);
-    else keys.add(item.key);
-  }
+  for (const item of schema) keys.add(item.key);
   return keys;
 }
 
