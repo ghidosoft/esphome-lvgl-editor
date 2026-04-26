@@ -191,6 +191,7 @@ export function PropertyPanel({ project }: Props) {
           state={e.state}
           onChange={(v) => updateProp(project, selectedWidgetId, e.state.fullKey, v)}
           onRevert={() => updateProp(project, selectedWidgetId, e.state.fullKey, undefined)}
+          onDelete={() => deleteProp(selectedWidgetId, e.state.fullKey)}
         />
       ))}
     </div>
@@ -388,13 +389,18 @@ function InlineCell({
   state,
   onChange,
   onRevert,
+  onDelete,
 }: {
   entry: SchemaEntry;
   state: RowState;
   onChange: (v: unknown) => void;
   onRevert: () => void;
+  onDelete: () => void;
 }) {
   const cellLabel = entry.label ?? state.displayLabel;
+  const isVarBacked = !!state.varBinding;
+  const canDelete =
+    state.existsInSource && !isVarBacked && !state.template && !state.pendingDelete;
   return (
     <div
       className={
@@ -420,6 +426,16 @@ function InlineCell({
       {state.hasOverride && (
         <button type="button" className="prop-row__btn" title="Revert to source" onClick={onRevert}>
           ↺
+        </button>
+      )}
+      {canDelete && (
+        <button
+          type="button"
+          className="prop-row__btn prop-row__btn--danger"
+          title="Remove from YAML (revert to LVGL default)"
+          onClick={onDelete}
+        >
+          ×
         </button>
       )}
     </div>
