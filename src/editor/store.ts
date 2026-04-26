@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { EsphomeProject, LvglPage, LvglWidget, WidgetId } from '../parser/types';
+import { readLayout } from '../parser/lvglNormalize';
 import type { HitEntry } from '../renderer/CanvasStage';
 import { deleteNested, setNested, splitKey } from './nestedKey';
 
@@ -377,5 +378,18 @@ function overrideWidget(
           : [];
     }
   }
-  return { ...widget, props: nextProps, styles: nextStyles, children: nextChildren };
+  // The renderer reads from `widget.layout` (typed cache), not
+  // `widget.props.layout` — re-derive the cache when the raw layout object
+  // changed so live edits propagate to the canvas.
+  const nextLayout =
+    nextProps.layout !== widget.props.layout
+      ? readLayout(nextProps.layout, [], widget.type)
+      : widget.layout;
+  return {
+    ...widget,
+    props: nextProps,
+    styles: nextStyles,
+    layout: nextLayout,
+    children: nextChildren,
+  };
 }

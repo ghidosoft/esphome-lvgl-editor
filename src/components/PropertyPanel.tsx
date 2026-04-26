@@ -108,6 +108,17 @@ export function PropertyPanel({ project }: Props) {
   const schema = getSchema(widget.type);
   const widgetOverrides = widgetOverridesMap[selectedWidgetId] ?? {};
   const pendingDeletions = widgetDeletionsMap[selectedWidgetId] ?? [];
+  const parentWidget = findParentWidget(project, selectedWidgetId);
+
+  const isVisible = (entry: SchemaEntry): boolean => {
+    const v = entry.visibleWhen;
+    if (!v) return true;
+    const target = v.scope === 'parent' ? parentWidget : widget;
+    if (!target) return false;
+    const actual = getNested(target.props, splitKey(v.key));
+    const expected = Array.isArray(v.equals) ? v.equals : [v.equals];
+    return expected.some((e) => e === actual);
+  };
 
   const computeRow = (entry: SchemaEntry, displayLabel: string): RowState => {
     const fullKey = entry.key;
@@ -149,7 +160,7 @@ export function PropertyPanel({ project }: Props) {
     };
   };
 
-  const sections = bucketSchema(schema, activeState, computeRow);
+  const sections = bucketSchema(schema, activeState, computeRow, isVisible);
   const queryLower = query.trim().toLowerCase();
   const filteredSections = filterSections(sections, queryLower, modifiedOnly);
 
@@ -302,8 +313,11 @@ export function PropertyPanel({ project }: Props) {
   };
 
   const schemaKeys = collectSchemaKeys(schema);
+  // `layout` lives on widget.props (post-parser change) but is fully covered by
+  // dotted-key schema entries (`layout.type`, `layout.pad_row`, …) — don't
+  // surface the bare object as a read-only "Other" row.
   const extraRows = Object.keys(widget.props).filter(
-    (k) => !schemaKeys.has(k) && !isStatePrefixedKey(k),
+    (k) => k !== 'layout' && !schemaKeys.has(k) && !isStatePrefixedKey(k),
   );
 
   return (
@@ -459,6 +473,7 @@ function bucketSchema(
   schema: SchemaItem[],
   activeState: WidgetState,
   computeRow: (entry: SchemaEntry, displayLabel: string) => RowState,
+  isVisible: (entry: SchemaEntry) => boolean,
 ): RenderableSection[] {
   const buckets = new Map<SectionId, RenderableItem[]>();
   const counts = new Map<SectionId, number>();
@@ -483,6 +498,7 @@ function bucketSchema(
       push('parts', { kind: 'subgroup', group: item, rows, modifiedCount: modified });
       continue;
     }
+    if (!isVisible(item)) continue;
     const bareKey = item.key;
     const sectionId = getSection(bareKey, 'widget');
     const stateMux = activeState !== 'default' && isStateAware(bareKey);
@@ -596,6 +612,29 @@ function walk(widgets: LvglWidget[], id: WidgetId): LvglWidget | null {
     if (w.widgetId === id) return w;
     const hit = walk(w.children, id);
     if (hit) return hit;
+  }
+  return null;
+}
+
+function findParentWidget(project: EsphomeProject, id: WidgetId): LvglWidget | null {
+  for (const page of project.pages) {
+    const hit = walkParent(page.widgets, id, null);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function walkParent(
+  widgets: LvglWidget[],
+  id: WidgetId,
+  parent: LvglWidget | null,
+): LvglWidget | null {
+  for (const w of widgets) {
+    if (w.widgetId === id) return parent;
+    const hit = walkParent(w.children, id, w);
+    if (hit !== null) return hit;
+    // hit === null can mean "found and parent was null" (top-level) — distinguish
+    // by also checking direct match above.
   }
   return null;
 }

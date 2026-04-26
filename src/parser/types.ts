@@ -145,7 +145,6 @@ export interface WidgetPropSources {
   self: WidgetSource;
   props: Record<string, PropSource>;
   styles?: PropSource;
-  layout?: Record<string, PropSource>;
 }
 
 /** Where a `style_definitions:` entry lives in the source. `yamlPath` points

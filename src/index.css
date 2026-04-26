@@ -1196,3 +1196,50 @@ body,
   display: block;
   margin-top: 2px;
 }
+
+/* ---------- Tracks editor (grid_rows / grid_columns) ---------- */
+.tracks-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+.tracks-field__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tracks-field__kind {
+  flex: 0 0 auto;
+  width: 78px;
+}
+.tracks-field__value {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.tracks-field__remove {
+  flex-shrink: 0;
+}
+.tracks-field__empty {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.tracks-field__add {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.tracks-field__add:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+.tracks-field__add:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

@@ -1,4 +1,5 @@
 import { COMMON_SCHEMA } from './common';
+import { LAYOUT_SCHEMA } from './layout';
 
 /**
  * Maps schema entry keys to UI sections in the property inspector. The schema
@@ -71,6 +72,26 @@ const SECTION_MAP: Record<string, SectionId> = {
   text_color: 'text',
   text_align: 'text',
   text_opa: 'text',
+  // Layout container (parent-side; nested under widget.props.layout)
+  'layout.type': 'layout',
+  'layout.grid_rows': 'layout',
+  'layout.grid_columns': 'layout',
+  'layout.grid_row_align': 'layout',
+  'layout.grid_column_align': 'layout',
+  'layout.flex_flow': 'layout',
+  'layout.flex_align_main': 'layout',
+  'layout.flex_align_cross': 'layout',
+  'layout.flex_align_track': 'layout',
+  'layout.pad_row': 'layout',
+  'layout.pad_column': 'layout',
+  // Layout placement (per-child; gated on the parent's layout.type)
+  grid_cell_row_pos: 'layout',
+  grid_cell_column_pos: 'layout',
+  grid_cell_row_span: 'layout',
+  grid_cell_column_span: 'layout',
+  grid_cell_x_align: 'layout',
+  grid_cell_y_align: 'layout',
+  flex_grow: 'layout',
 };
 
 /**
@@ -120,13 +141,13 @@ export function getSection(bareKey: string, fallback: SectionId = 'widget'): Sec
  */
 function checkCommonSchemaCoverage(): void {
   const missing: string[] = [];
-  for (const item of COMMON_SCHEMA) {
+  for (const item of [...COMMON_SCHEMA, ...LAYOUT_SCHEMA]) {
     if ('kind' in item && item.kind === 'group') continue;
     if (!(item.key in SECTION_MAP)) missing.push(item.key);
   }
   if (missing.length > 0) {
     console.error(
-      '[inspector] COMMON_SCHEMA entries missing in SECTION_MAP — they will fall back to the "Widget" section: ' +
+      '[inspector] COMMON/LAYOUT schema entries missing in SECTION_MAP — they will fall back to the "Widget" section: ' +
         missing.join(', '),
     );
   }

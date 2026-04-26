@@ -304,7 +304,11 @@ function readWidget(
 
   const selfOrigin = readOrigin(originItem);
 
-  const { widgets, layout, styles, ...props } = body;
+  // `layout` stays inside `props` (under the literal `layout` key) so the
+  // editor can address sub-fields with dotted keys (`layout.type`, …) through
+  // the same override/source-map path as everything else. The typed
+  // `widget.layout` cache below is derived from `props.layout`.
+  const { widgets, styles, ...props } = body;
   const declaredId = typeof body.id === 'string' ? body.id : undefined;
   const widgetId = makeWidgetId(pageId, indexPath, declaredId);
 
@@ -352,13 +356,10 @@ function readWidget(
     }
     const stylesNode = bodyOriginMap.styles;
     const stylesSrc = toPropSource(stylesNode);
-    const layoutNode = bodyOriginMap.layout;
-    const layoutSrc = toLayoutPropSources(layoutNode);
     sources[widgetId] = {
       self: { file: selfOrigin.file, yamlPath: selfOrigin.yamlPath, widgetType: type },
       props: propSources,
       styles: stylesSrc,
-      layout: layoutSrc,
     };
   }
 
@@ -373,7 +374,7 @@ function readWidget(
     indexPath,
   );
   const styleIds = readStyles_field(styles);
-  const layoutSpec = readLayout(layout, errors, type);
+  const layoutSpec = readLayout(props.layout, errors, type);
 
   return {
     type,
@@ -401,19 +402,6 @@ function toPropSource(leaf: OriginNode | undefined): PropSource | undefined {
   return undefined;
 }
 
-function toLayoutPropSources(
-  layoutOrigin: OriginNode | undefined,
-): Record<string, PropSource> | undefined {
-  if (!layoutOrigin) return undefined;
-  if (isOriginLeaf(layoutOrigin) || Array.isArray(layoutOrigin)) return undefined;
-  const out: Record<string, PropSource> = {};
-  for (const [k, v] of Object.entries(layoutOrigin)) {
-    const src = toPropSource(v);
-    if (src) out[k] = src;
-  }
-  return Object.keys(out).length > 0 ? out : undefined;
-}
-
 function buildSubstitutionEntries(
   subs: Record<string, string>,
   subsOrigin: Origin | undefined,
@@ -439,7 +427,7 @@ function readStyles_field(value: unknown): string[] {
   return [];
 }
 
-function readLayout(
+export function readLayout(
   value: unknown,
   _errors: ParseError[],
   _ownerType: string,

@@ -5,6 +5,7 @@ import { EnumSelect } from './inspector/fields/EnumSelect';
 import { NumericField } from './inspector/fields/NumericField';
 import { SizeInput } from './inspector/fields/SizeInput';
 import { StringInput } from './inspector/fields/StringInput';
+import { TracksField } from './inspector/fields/TracksField';
 
 interface Props {
   entry: SchemaEntry;
@@ -49,5 +50,7 @@ export function PropControl({ entry, value, onChange, disabled }: Props) {
       );
     case 'bool':
       return <BoolToggle value={value} onChange={onChange} disabled={disabled} />;
+    case 'tracks':
+      return <TracksField value={value} onChange={onChange} disabled={disabled} />;
   }
 }

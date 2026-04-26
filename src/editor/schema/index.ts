@@ -1,5 +1,6 @@
 import { COMMON_SCHEMA } from './common';
 import { LABEL_SCHEMA } from './label';
+import { LAYOUT_SCHEMA } from './layout';
 import { SLIDER_SCHEMA } from './slider';
 import { SPINNER_SCHEMA } from './spinner';
 
@@ -16,9 +17,30 @@ import { SPINNER_SCHEMA } from './spinner';
  * editor, group children are keyed by a dotted string (`"indicator.bg_color"`)
  * and share that same dotted form across the store, source map, and edit ops.
  */
-export type PropKind = 'string' | 'number' | 'size' | 'color' | 'enum' | 'align' | 'bool';
+export type PropKind =
+  | 'string'
+  | 'number'
+  | 'size'
+  | 'color'
+  | 'enum'
+  | 'align'
+  | 'bool'
+  | 'tracks';
 
 export type IconId = 'pad' | 'radius' | 'border-width';
+
+/**
+ * Declarative visibility predicate. Entries are filtered out of the panel
+ * when the referenced key (on `self` — the current widget — or on `parent`)
+ * doesn't match `equals`. Used to gate GRID-only / FLEX-only fields and
+ * per-child placement props (which only apply when the parent has a layout).
+ */
+export interface VisibleWhen {
+  scope?: 'self' | 'parent';
+  /** Dotted key into `widget.props` (e.g. "layout.type"). */
+  key: string;
+  equals: string | string[];
+}
 
 export interface SchemaEntry {
   key: string;
@@ -41,6 +63,8 @@ export interface SchemaEntry {
    * one section render as a single DimensionGrid row with a lock toggle.
    */
   linkedGroup?: string;
+  /** Hide the entry unless the referenced key matches. See {@link VisibleWhen}. */
+  visibleWhen?: VisibleWhen;
 }
 
 export interface SchemaGroup {
@@ -66,7 +90,7 @@ export function isGroup(item: SchemaItem): item is SchemaGroup {
  */
 export function getSchema(widgetType: string): PropertySchema {
   const specific = SPECIFIC_SCHEMAS[widgetType] ?? [];
-  return [...COMMON_SCHEMA, ...specific];
+  return [...COMMON_SCHEMA, ...LAYOUT_SCHEMA, ...specific];
 }
 
 const SPECIFIC_SCHEMAS: Record<string, PropertySchema> = {
