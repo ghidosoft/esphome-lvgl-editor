@@ -46,6 +46,11 @@ export const COMMON_SCHEMA: PropertySchema = [
   { key: 'pad_right', kind: 'number', min: 0, unit: 'px', linkedGroup: 'padding', label: 'R' },
   { key: 'pad_bottom', kind: 'number', min: 0, unit: 'px', linkedGroup: 'padding', label: 'B' },
   { key: 'pad_left', kind: 'number', min: 0, unit: 'px', linkedGroup: 'padding', label: 'L' },
+  // Text styling cascades to child labels in LVGL (e.g. button → label child),
+  // so it's available on every widget. `text` and `text_align` stay
+  // label-specific because they describe label content, not styling.
+  { key: 'text_color', kind: 'color' },
+  { key: 'text_opa', kind: 'number', min: 0, max: 255, slider: { min: 0, max: 255 } },
 ];
 
 /** Keys corresponding to LVGL states that the editor exposes. */

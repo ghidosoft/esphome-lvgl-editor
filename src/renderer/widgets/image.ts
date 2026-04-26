@@ -1,6 +1,7 @@
 import type { ImageSpec, LvglWidget } from '../../parser/types';
 import { renderPlaceholder } from './placeholder';
 import { resolveProp } from '../styles';
+import { contentBox } from '../boxes';
 import type { Box, RenderContext } from '../context';
 
 /**
@@ -19,6 +20,10 @@ export function renderImage(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const url = resolveImageUrl(src, ctx.project.images);
   if (!url) return renderPlaceholder(w, box, ctx);
 
+  // Padding insets the bitmap from the widget's outer box, the same as in
+  // LVGL — background/border (if any) still cover the full box.
+  const inner = contentBox(box, w, styles, ctx.theme);
+
   let img = cache.get(url);
   if (!img) {
     img = new Image();
@@ -29,13 +34,13 @@ export function renderImage(w: LvglWidget, box: Box, ctx: RenderContext): Box {
     cache.set(url, img);
   }
   if (img.complete && img.naturalWidth > 0) {
-    ctx.ctx.drawImage(img, box.x, box.y, box.width, box.height);
+    ctx.ctx.drawImage(img, inner.x, inner.y, inner.width, inner.height);
   } else {
     // Loading: show muted placeholder rectangle.
     const c = ctx.ctx;
     c.save();
     c.fillStyle = 'rgba(255,255,255,0.04)';
-    c.fillRect(box.x, box.y, box.width, box.height);
+    c.fillRect(inner.x, inner.y, inner.width, inner.height);
     c.restore();
   }
   return box;

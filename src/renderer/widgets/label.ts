@@ -1,4 +1,5 @@
 import type { LvglWidget } from '../../parser/types';
+import { contentBox } from '../boxes';
 import { parseColor, parseOpacity, withAlpha } from '../colors';
 import type { Box, RenderContext } from '../context';
 import { resolveFont } from '../fonts';
@@ -21,6 +22,10 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
 
   const align = String(resolveProp(w, 'align', styles, theme) ?? 'TOP_LEFT').toUpperCase();
 
+  // Inset text positioning by border + padding — LVGL paints the label's
+  // background/border on the outer box but its glyphs inside the content box.
+  const inner = contentBox(box, w, styles, theme);
+
   const c = ctx.ctx;
   c.save();
   c.font = font;
@@ -33,7 +38,11 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const { hAlign, vAlign } = decomposeAlign(align);
   c.textAlign = hAlign;
   const xPos =
-    hAlign === 'right' ? box.x + box.width : hAlign === 'center' ? box.x + box.width / 2 : box.x;
+    hAlign === 'right'
+      ? inner.x + inner.width
+      : hAlign === 'center'
+        ? inner.x + inner.width / 2
+        : inner.x;
   // Two different heights at play:
   //  - lineHeight (ascent+descent): matches LVGL's `font.line_height`, used for
   //    SIZE_CONTENT and the returned hit-test rect.
@@ -46,10 +55,10 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const emSize = parseEmSize(font);
   const yPos =
     vAlign === 'bottom'
-      ? box.y + box.height - emSize
+      ? inner.y + inner.height - emSize
       : vAlign === 'middle'
-        ? box.y + (box.height - emSize) / 2
-        : box.y;
+        ? inner.y + (inner.height - emSize) / 2
+        : inner.y;
 
   c.fillText(text, xPos, yPos);
 
@@ -68,10 +77,10 @@ export function renderLabel(w: LvglWidget, box: Box, ctx: RenderContext): Box {
         : xPos;
   const drawnY =
     vAlign === 'bottom'
-      ? box.y + box.height - lineHeight
+      ? inner.y + inner.height - lineHeight
       : vAlign === 'middle'
-        ? box.y + (box.height - lineHeight) / 2
-        : box.y;
+        ? inner.y + (inner.height - lineHeight) / 2
+        : inner.y;
   return { x: contentX, y: drawnY, width: measuredWidth, height: lineHeight };
 }
 

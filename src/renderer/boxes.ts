@@ -88,6 +88,29 @@ export function applyPadding(
   };
 }
 
+/**
+ * Inner-content box: outer box minus border and padding. Used by leaf
+ * renderers (label, image, etc.) to position their own content the same way
+ * LVGL does — outer box draws background+border, inner box receives the text
+ * or image. CanvasStage computes the equivalent for child layout slots, but
+ * leaf widgets that don't have children must apply this themselves.
+ */
+export function contentBox(
+  box: Box,
+  widget: LvglWidget,
+  styles: Record<string, StyleSpec>,
+  theme?: DefaultTheme,
+): Box {
+  const borderWidth = numProp(resolveProp(widget, 'border_width', styles, theme), 0);
+  const afterBorder: Box = {
+    x: box.x + borderWidth,
+    y: box.y + borderWidth,
+    width: Math.max(0, box.width - 2 * borderWidth),
+    height: Math.max(0, box.height - 2 * borderWidth),
+  };
+  return applyPadding(afterBorder, widget, styles, theme);
+}
+
 export function numProp(v: unknown, fallback: number): number {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
