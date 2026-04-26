@@ -1,32 +1,86 @@
-import type { ReactNode } from 'react';
-import type { EsphomeProject, LvglWidget, WidgetId } from '../parser/types';
+import { useState, type ReactNode } from 'react';
+import type { EsphomeProject, LvglWidget, PropSource, WidgetId } from '../parser/types';
 import { isOpaqueTag } from '../parser/types';
-import { useEditorStore } from '../editor/store';
-import { getSchema, isGroup, type SchemaEntry, type SchemaItem } from '../editor/schema';
+import { useEditorStore, type WidgetState } from '../editor/store';
+import {
+  getSchema,
+  isGroup,
+  type SchemaEntry,
+  type SchemaGroup,
+  type SchemaItem,
+} from '../editor/schema';
+import {
+  SECTION_LABELS,
+  SECTION_ORDER,
+  STATE_AWARE_SECTIONS,
+  getSection,
+  isStateAware,
+  type SectionId,
+} from '../editor/schema/sections';
 import { getNested, splitKey } from '../editor/nestedKey';
 import { PropControl } from './PropControl';
 import { StylesField } from './StylesField';
 import { Breadcrumb } from './Breadcrumb';
 import { StateToggleStrip } from './StateToggleStrip';
-import { PropertyRow } from './inspector/PropertyRow';
+import { PropertyRow, type VarBinding } from './inspector/PropertyRow';
 import { PropertyGroup } from './inspector/PropertyGroup';
 import { ReadOnlyRow } from './inspector/ReadOnlyRow';
+import { InspectorHeader } from './inspector/InspectorHeader';
 
 interface Props {
   project: EsphomeProject;
 }
 
+interface RowState {
+  fullKey: string;
+  displayLabel: string;
+  effective: unknown;
+  source?: PropSource;
+  hasOverride: boolean;
+  pendingDelete: boolean;
+  existsInSource: boolean;
+  existsNow: boolean;
+  varBinding?: VarBinding;
+  template: boolean;
+  disabled: boolean;
+  canDelete: boolean;
+}
+
+interface RenderableEntry {
+  kind: 'entry';
+  entry: SchemaEntry;
+  state: RowState;
+}
+
+interface RenderableSubgroup {
+  kind: 'subgroup';
+  group: SchemaGroup;
+  rows: RenderableEntry[];
+  modifiedCount: number;
+}
+
+type RenderableItem = RenderableEntry | RenderableSubgroup;
+
+interface RenderableSection {
+  id: SectionId;
+  label: string;
+  stateAware: boolean;
+  items: RenderableItem[];
+  modifiedCount: number;
+  hasQueryMatch: boolean;
+}
+
 /**
- * Property editor for the selected widget. Renders every entry from the
- * widget's schema — including ones not yet defined in YAML — so the user can
- * both tweak existing props and add new ones. Schema-covered props use typed
- * controls; unknown props fall through as read-only raw rows. Var-backed
- * props are editable (changes flow to the substitution); templates stay
- * read-only.
+ * Property editor for the selected widget. Schema entries are bucketed into
+ * semantic sections (Layout, Spacing, Background, …); each section is a
+ * collapsible group with persisted open-state. The state selector at the top
+ * multiplexes state-aware entries (bg_color, border_*, radius, text_*) into
+ * the active LVGL state's namespace, replacing the previous trio of trailing
+ * "Pressed/Checked/Disabled" groups.
  *
- * Each editable row has a revert button (↺) when dirty, and a remove button
- * (×) when the prop is currently defined in the source — removing drops the
- * key from YAML on save, reverting the widget to the LVGL default.
+ * Var-backed props are editable (changes flow to the substitution); templates
+ * stay read-only. Each editable row has a revert button (↺) when dirty, and a
+ * remove button (×) when the prop is currently defined in the source.
  */
 export function PropertyPanel({ project }: Props) {
   const selectedWidgetId = useEditorStore((s) => s.selectedWidgetId);
@@ -37,6 +91,9 @@ export function PropertyPanel({ project }: Props) {
   const deleteProp = useEditorStore((s) => s.deleteProp);
   const activeState = useEditorStore((s) => s.activeState);
   const setActiveState = useEditorStore((s) => s.setActiveState);
+
+  const [query, setQuery] = useState('');
+  const [modifiedOnly, setModifiedOnly] = useState(false);
 
   if (!selectedWidgetId) {
     return <div className="panel__hint">Click a widget on the canvas to inspect it.</div>;
@@ -51,66 +108,97 @@ export function PropertyPanel({ project }: Props) {
   const widgetOverrides = widgetOverridesMap[selectedWidgetId] ?? {};
   const pendingDeletions = widgetDeletionsMap[selectedWidgetId] ?? [];
 
-  // Props outside the schema that are present on the widget — render
-  // read-only so nothing gets hidden. Schema groups claim their top-level
-  // YAML key (e.g. `indicator`) so they don't reappear as raw rows.
-  const schemaKeys = new Set(schema.map((e) => e.key));
-  const extraRows = Object.keys(widget.props).filter((k) => !schemaKeys.has(k));
-
-  const renderRow = (entry: SchemaEntry): ReactNode => {
-    const source = sources.props[entry.key];
+  const computeRow = (entry: SchemaEntry, displayLabel: string): RowState => {
+    const fullKey = entry.key;
+    const source = sources.props[fullKey];
     const varName = source?.viaVariable;
     const varOverride = varName ? varOverrides[varName] : undefined;
     const hasVarOverride = varName != null && varName in varOverrides;
-    const hasWidgetOverride = entry.key in widgetOverrides;
-    const pendingDelete = pendingDeletions.includes(entry.key);
+    const hasWidgetOverride = fullKey in widgetOverrides;
+    const pendingDelete = pendingDeletions.includes(fullKey);
     const hasOverride = hasVarOverride || hasWidgetOverride || pendingDelete;
     const existsInSource = source != null;
-    const path = splitKey(entry.key);
+    const path = splitKey(fullKey);
     const existsNow = getNested(widget.props, path) !== undefined;
-
-    // Effective displayed value: varOverride → widgetOverride → source.
     const effective = hasVarOverride
       ? varOverride
       : hasWidgetOverride
-        ? widgetOverrides[entry.key]
+        ? widgetOverrides[fullKey]
         : getNested(widget.props, path);
-
-    const disabled = !!source?.template || pendingDelete;
     const isVarBacked = !!source?.viaVariable;
-    // Offer "remove" only for literal props that actually exist in the source;
-    // var-backed removal would mean detach (P5), and adding+deleting a not-yet-
-    // written prop is just a revert.
-    const canDelete = existsInSource && !isVarBacked && !source?.template;
+    const template = !!source?.template;
+    const disabled = template || pendingDelete;
     const sub = source?.viaVariable ? project.substitutions?.[source.viaVariable] : undefined;
+    const canDelete = existsInSource && !isVarBacked && !template;
+    return {
+      fullKey,
+      displayLabel,
+      effective,
+      source,
+      hasOverride,
+      pendingDelete,
+      existsInSource,
+      existsNow,
+      varBinding: source?.viaVariable
+        ? { name: source.viaVariable, usages: sub?.usages.length }
+        : undefined,
+      template,
+      disabled,
+      canDelete,
+    };
+  };
 
+  const sections = bucketSchema(schema, activeState, computeRow);
+  const queryLower = query.trim().toLowerCase();
+  const filteredSections = filterSections(sections, queryLower, modifiedOnly);
+
+  const renderEntry = (e: RenderableEntry): ReactNode => {
+    const { entry, state } = e;
     return (
       <PropertyRow
-        key={entry.key}
-        label={entry.key}
-        dirty={hasOverride}
-        unset={!existsNow && !hasOverride}
-        pendingDelete={pendingDelete}
-        disabled={disabled}
-        varBinding={
-          source?.viaVariable ? { name: source.viaVariable, usages: sub?.usages.length } : undefined
-        }
-        template={!!source?.template}
-        origin={source?.file}
-        canRevert={hasOverride}
-        canDelete={canDelete && !pendingDelete}
-        onRevert={() => updateProp(project, selectedWidgetId, entry.key, undefined)}
-        onDelete={() => deleteProp(selectedWidgetId, entry.key)}
+        key={state.fullKey}
+        label={state.displayLabel}
+        dirty={state.hasOverride}
+        unset={!state.existsNow && !state.hasOverride}
+        pendingDelete={state.pendingDelete}
+        disabled={state.disabled}
+        varBinding={state.varBinding}
+        template={state.template}
+        origin={state.source?.file}
+        canRevert={state.hasOverride}
+        canDelete={state.canDelete && !state.pendingDelete}
+        onRevert={() => updateProp(project, selectedWidgetId, state.fullKey, undefined)}
+        onDelete={() => deleteProp(selectedWidgetId, state.fullKey)}
       >
         <PropControl
           entry={entry}
-          value={effective}
-          onChange={(v) => updateProp(project, selectedWidgetId, entry.key, v)}
-          disabled={disabled}
+          value={state.effective}
+          onChange={(v) => updateProp(project, selectedWidgetId, state.fullKey, v)}
+          disabled={state.disabled}
         />
       </PropertyRow>
     );
   };
+
+  const renderItem = (item: RenderableItem): ReactNode => {
+    if (item.kind === 'entry') return renderEntry(item);
+    return (
+      <PropertyGroup
+        key={item.group.key}
+        label={item.group.label ?? item.group.key}
+        modifiedCount={item.modifiedCount}
+        forceOpen={!!queryLower}
+        persistKey={`${widget.type}.parts.${item.group.key}`}
+      >
+        {item.rows.map(renderEntry)}
+      </PropertyGroup>
+    );
+  };
+
+  const schemaKeys = collectSchemaKeys(schema);
+  const extraRows = Object.keys(widget.props).filter(
+    (k) => !schemaKeys.has(k) && !isStatePrefixedKey(k),
+  );
 
   return (
     <div className="panel-body">
@@ -127,6 +215,12 @@ export function PropertyPanel({ project }: Props) {
       </header>
 
       <div className="panel-body__rows">
+        <InspectorHeader
+          query={query}
+          onQueryChange={setQuery}
+          modifiedOnly={modifiedOnly}
+          onModifiedOnlyChange={setModifiedOnly}
+        />
         <StylesField
           currentStyles={
             'styles' in widgetOverrides
@@ -141,7 +235,22 @@ export function PropertyPanel({ project }: Props) {
           onRevert={() => updateProp(project, selectedWidgetId, 'styles', undefined)}
         />
 
-        {schema.map((item) => renderSchemaItem(item, renderRow))}
+        {filteredSections.map((section) => (
+          <PropertyGroup
+            key={section.id}
+            label={section.label}
+            modifiedCount={section.modifiedCount}
+            forceOpen={section.hasQueryMatch}
+            persistKey={`${widget.type}.${section.id}`}
+            badge={
+              section.stateAware && activeState !== 'default' ? (
+                <StatePill state={activeState} />
+              ) : undefined
+            }
+          >
+            {section.items.map(renderItem)}
+          </PropertyGroup>
+        ))}
 
         {extraRows.map((key) => (
           <ReadOnlyRow
@@ -161,16 +270,120 @@ export function PropertyPanel({ project }: Props) {
   );
 }
 
-function renderSchemaItem(
-  item: SchemaItem,
-  renderRow: (entry: SchemaEntry) => ReactNode,
-): ReactNode {
-  if (!isGroup(item)) return renderRow(item);
+function StatePill({ state }: { state: WidgetState }) {
   return (
-    <PropertyGroup key={item.key} label={item.label ?? item.key}>
-      {item.entries.map((child) => renderRow({ ...child, key: `${item.key}.${child.key}` }))}
-    </PropertyGroup>
+    <span className="prop-group__state-pill" title={`Editing :${state} state`}>
+      :{state}
+    </span>
   );
+}
+
+function bucketSchema(
+  schema: SchemaItem[],
+  activeState: WidgetState,
+  computeRow: (entry: SchemaEntry, displayLabel: string) => RowState,
+): RenderableSection[] {
+  const buckets = new Map<SectionId, RenderableItem[]>();
+  const counts = new Map<SectionId, number>();
+
+  const push = (id: SectionId, item: RenderableItem) => {
+    if (!buckets.has(id)) buckets.set(id, []);
+    buckets.get(id)!.push(item);
+    if (item.kind === 'entry' && item.state.hasOverride) {
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    } else if (item.kind === 'subgroup') {
+      counts.set(id, (counts.get(id) ?? 0) + item.modifiedCount);
+    }
+  };
+
+  for (const item of schema) {
+    if (isGroup(item)) {
+      const rows: RenderableEntry[] = item.entries.map((child) => {
+        const synth: SchemaEntry = { ...child, key: `${item.key}.${child.key}` };
+        return { kind: 'entry', entry: synth, state: computeRow(synth, child.key) };
+      });
+      const modified = rows.filter((r) => r.state.hasOverride).length;
+      push('parts', { kind: 'subgroup', group: item, rows, modifiedCount: modified });
+      continue;
+    }
+    const bareKey = item.key;
+    const sectionId = getSection(bareKey, 'widget');
+    const stateMux = activeState !== 'default' && isStateAware(bareKey);
+    if (stateMux) {
+      const synth: SchemaEntry = { ...item, key: `${activeState}.${bareKey}` };
+      push(sectionId, { kind: 'entry', entry: synth, state: computeRow(synth, bareKey) });
+    } else {
+      push(sectionId, { kind: 'entry', entry: item, state: computeRow(item, bareKey) });
+    }
+  }
+
+  return SECTION_ORDER.flatMap((id): RenderableSection[] => {
+    const items = buckets.get(id);
+    if (!items || items.length === 0) return [];
+    return [
+      {
+        id,
+        label: SECTION_LABELS[id],
+        stateAware: STATE_AWARE_SECTIONS.has(id),
+        items,
+        modifiedCount: counts.get(id) ?? 0,
+        hasQueryMatch: false,
+      },
+    ];
+  });
+}
+
+function filterSections(
+  sections: RenderableSection[],
+  queryLower: string,
+  modifiedOnly: boolean,
+): RenderableSection[] {
+  if (!queryLower && !modifiedOnly) return sections;
+
+  const matchesEntry = (e: RenderableEntry): boolean => {
+    if (modifiedOnly && !e.state.hasOverride) return false;
+    if (queryLower && !e.state.displayLabel.toLowerCase().includes(queryLower)) return false;
+    return true;
+  };
+
+  return sections.flatMap((s): RenderableSection[] => {
+    const items: RenderableItem[] = [];
+    let hasQueryMatch = false;
+    for (const item of s.items) {
+      if (item.kind === 'entry') {
+        if (matchesEntry(item)) {
+          items.push(item);
+          if (queryLower && item.state.displayLabel.toLowerCase().includes(queryLower)) {
+            hasQueryMatch = true;
+          }
+        }
+      } else {
+        const filteredRows = item.rows.filter(matchesEntry);
+        if (filteredRows.length === 0) continue;
+        const groupMatches =
+          queryLower &&
+          (filteredRows.some((r) => r.state.displayLabel.toLowerCase().includes(queryLower)) ||
+            (item.group.label ?? item.group.key).toLowerCase().includes(queryLower));
+        if (groupMatches) hasQueryMatch = true;
+        items.push({ ...item, rows: filteredRows });
+      }
+    }
+    if (items.length === 0) return [];
+    return [{ ...s, items, hasQueryMatch }];
+  });
+}
+
+function collectSchemaKeys(schema: SchemaItem[]): Set<string> {
+  const keys = new Set<string>();
+  for (const item of schema) {
+    if (isGroup(item)) keys.add(item.key);
+    else keys.add(item.key);
+  }
+  return keys;
+}
+
+function isStatePrefixedKey(key: string): boolean {
+  return key === 'pressed' || key === 'checked' || key === 'disabled';
 }
 
 function shortFile(p: string): string {

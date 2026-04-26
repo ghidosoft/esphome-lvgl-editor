@@ -1,4 +1,4 @@
-import { COMMON_SCHEMA, COMMON_STATE_GROUPS } from './common';
+import { COMMON_SCHEMA } from './common';
 import { LABEL_SCHEMA } from './label';
 import { SLIDER_SCHEMA } from './slider';
 import { SPINNER_SCHEMA } from './spinner';
@@ -43,11 +43,14 @@ export function isGroup(item: SchemaItem): item is SchemaGroup {
 
 /**
  * Returns the composed schema for a given widget type. Common props come
- * first (so they appear at the top of the panel), then type-specific.
+ * first (so they appear at the top of the panel), then type-specific. State
+ * variants (pressed/checked/disabled) are no longer concatenated as separate
+ * groups — the panel multiplexes the state-aware entries through the state
+ * selector instead.
  */
 export function getSchema(widgetType: string): PropertySchema {
   const specific = SPECIFIC_SCHEMAS[widgetType] ?? [];
-  return [...COMMON_SCHEMA, ...specific, ...COMMON_STATE_GROUPS];
+  return [...COMMON_SCHEMA, ...specific];
 }
 
 const SPECIFIC_SCHEMAS: Record<string, PropertySchema> = {

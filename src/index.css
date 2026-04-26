@@ -400,7 +400,49 @@ body,
   cursor: default;
 }
 
-/* ---------- Property group (nested part selectors) ---------- */
+/* ---------- Inspector header (search + filters) ---------- */
+.inspector-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.inspector-header__search {
+  flex: 1;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+}
+.inspector-header__search:focus {
+  outline: 1px solid var(--accent);
+  border-color: var(--accent);
+}
+.inspector-header__filter {
+  background: var(--panel-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 4px 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.inspector-header__filter:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+.inspector-header__filter--on {
+  background: rgba(58, 160, 255, 0.12);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---------- Property group (collapsible sections + nested part selectors) ---------- */
 .prop-group {
   background: var(--panel-2);
   border-radius: 4px;
@@ -409,13 +451,56 @@ body,
   flex-direction: column;
   gap: 4px;
 }
+.prop-group--collapsed {
+  padding-bottom: 6px;
+}
 .prop-group__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 2px 6px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.prop-group__header:hover {
+  color: var(--text);
+}
+.prop-group__caret {
+  font-size: 10px;
+  color: var(--text-muted);
+  width: 10px;
+  display: inline-block;
+}
+.prop-group__title {
+  flex: 1;
+}
+.prop-group__count {
+  font-size: 10px;
+  color: var(--accent);
+  background: rgba(58, 160, 255, 0.12);
+  padding: 1px 6px;
+  border-radius: 8px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 600;
+}
+.prop-group__state-pill {
+  font-size: 10px;
+  color: var(--warn);
+  background: rgba(255, 159, 10, 0.12);
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 .prop-group__rows {
   display: flex;
