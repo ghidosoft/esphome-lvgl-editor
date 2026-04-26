@@ -1,19 +1,16 @@
 import type { ReactNode } from 'react';
-import type { EsphomeProject, LvglWidget, PropSource, WidgetId } from '../parser/types';
+import type { EsphomeProject, LvglWidget, WidgetId } from '../parser/types';
 import { isOpaqueTag } from '../parser/types';
 import { useEditorStore } from '../editor/store';
-import {
-  getSchema,
-  isGroup,
-  type SchemaEntry,
-  type SchemaGroup,
-  type SchemaItem,
-} from '../editor/schema';
+import { getSchema, isGroup, type SchemaEntry, type SchemaItem } from '../editor/schema';
 import { getNested, splitKey } from '../editor/nestedKey';
 import { PropControl } from './PropControl';
 import { StylesField } from './StylesField';
 import { Breadcrumb } from './Breadcrumb';
 import { StateToggleStrip } from './StateToggleStrip';
+import { PropertyRow } from './inspector/PropertyRow';
+import { PropertyGroup } from './inspector/PropertyGroup';
+import { ReadOnlyRow } from './inspector/ReadOnlyRow';
 
 interface Props {
   project: EsphomeProject;
@@ -60,7 +57,7 @@ export function PropertyPanel({ project }: Props) {
   const schemaKeys = new Set(schema.map((e) => e.key));
   const extraRows = Object.keys(widget.props).filter((k) => !schemaKeys.has(k));
 
-  const renderRow = (entry: SchemaEntry) => {
+  const renderRow = (entry: SchemaEntry): ReactNode => {
     const source = sources.props[entry.key];
     const varName = source?.viaVariable;
     const varOverride = varName ? varOverrides[varName] : undefined;
@@ -79,21 +76,39 @@ export function PropertyPanel({ project }: Props) {
         ? widgetOverrides[entry.key]
         : getNested(widget.props, path);
 
+    const disabled = !!source?.template || pendingDelete;
+    const isVarBacked = !!source?.viaVariable;
+    // Offer "remove" only for literal props that actually exist in the source;
+    // var-backed removal would mean detach (P5), and adding+deleting a not-yet-
+    // written prop is just a revert.
+    const canDelete = existsInSource && !isVarBacked && !source?.template;
+    const sub = source?.viaVariable ? project.substitutions?.[source.viaVariable] : undefined;
+
     return (
-      <EditableRow
+      <PropertyRow
         key={entry.key}
-        entry={entry}
-        source={source}
-        project={project}
-        value={effective}
-        hasOverride={hasOverride}
+        label={entry.key}
+        dirty={hasOverride}
+        unset={!existsNow && !hasOverride}
         pendingDelete={pendingDelete}
-        existsInSource={existsInSource}
-        existsNow={existsNow}
-        onChange={(v) => updateProp(project, selectedWidgetId, entry.key, v)}
+        disabled={disabled}
+        varBinding={
+          source?.viaVariable ? { name: source.viaVariable, usages: sub?.usages.length } : undefined
+        }
+        template={!!source?.template}
+        origin={source?.file}
+        canRevert={hasOverride}
+        canDelete={canDelete && !pendingDelete}
         onRevert={() => updateProp(project, selectedWidgetId, entry.key, undefined)}
         onDelete={() => deleteProp(selectedWidgetId, entry.key)}
-      />
+      >
+        <PropControl
+          entry={entry}
+          value={effective}
+          onChange={(v) => updateProp(project, selectedWidgetId, entry.key, v)}
+          disabled={disabled}
+        />
+      </PropertyRow>
     );
   };
 
@@ -103,7 +118,11 @@ export function PropertyPanel({ project }: Props) {
         <Breadcrumb project={project} widgetId={selectedWidgetId} />
         <div className="panel-body__type">{widget.type}</div>
         <div className="panel-body__id">{selectedWidgetId}</div>
-        {sources.self && <OriginLine label="defined in" file={sources.self.file} />}
+        {sources.self && (
+          <div className="prop-row__origin">
+            defined in <code>{shortFile(sources.self.file)}</code>
+          </div>
+        )}
         <StateToggleStrip widget={widget} activeState={activeState} onChange={setActiveState} />
       </header>
 
@@ -134,7 +153,7 @@ export function PropertyPanel({ project }: Props) {
                 ? (widget.props[key] as { __tag: string }).__tag
                 : undefined
             }
-            source={sources.props[key]}
+            origin={sources.props[key]?.file}
           />
         ))}
       </div>
@@ -147,155 +166,10 @@ function renderSchemaItem(
   renderRow: (entry: SchemaEntry) => ReactNode,
 ): ReactNode {
   if (!isGroup(item)) return renderRow(item);
-  return <GroupSection key={item.key} group={item} renderRow={renderRow} />;
-}
-
-function GroupSection({
-  group,
-  renderRow,
-}: {
-  group: SchemaGroup;
-  renderRow: (entry: SchemaEntry) => ReactNode;
-}) {
   return (
-    <div className="prop-group">
-      <div className="prop-group__header">{group.label ?? group.key}</div>
-      <div className="prop-group__rows">
-        {group.entries.map((child) => renderRow({ ...child, key: `${group.key}.${child.key}` }))}
-      </div>
-    </div>
-  );
-}
-
-function EditableRow({
-  entry,
-  source,
-  project,
-  value,
-  hasOverride,
-  pendingDelete,
-  existsInSource,
-  existsNow,
-  onChange,
-  onRevert,
-  onDelete,
-}: {
-  entry: SchemaEntry;
-  source?: PropSource;
-  project: EsphomeProject;
-  value: unknown;
-  hasOverride: boolean;
-  pendingDelete: boolean;
-  existsInSource: boolean;
-  existsNow: boolean;
-  onChange: (v: unknown) => void;
-  onRevert: () => void;
-  onDelete: () => void;
-}) {
-  const disabled = !!source?.template || pendingDelete;
-  const sub = source?.viaVariable ? project.substitutions?.[source.viaVariable] : undefined;
-  const isVarBacked = !!source?.viaVariable;
-  // Offer "remove" only for literal props that actually exist in the source;
-  // var-backed removal would mean detach (P5), and adding+deleting a not-yet-
-  // written prop is just a revert.
-  const canDelete = existsInSource && !isVarBacked && !source?.template;
-
-  const rowClass = [
-    'prop-row',
-    hasOverride ? 'prop-row--dirty' : '',
-    disabled ? 'prop-row--disabled' : '',
-    pendingDelete ? 'prop-row--pending-delete' : '',
-    !existsNow && !hasOverride ? 'prop-row--unset' : '',
-  ]
-    .join(' ')
-    .trim();
-
-  return (
-    <div className={rowClass}>
-      <div className="prop-row__key">
-        {entry.key}
-        {hasOverride && <span className="prop-row__dirty-dot" title="unsaved change" />}
-        {!existsNow && !hasOverride && <span className="prop-row__unset-tag">unset</span>}
-      </div>
-      <div className="prop-row__control">
-        <PropControl entry={entry} value={value} onChange={onChange} disabled={disabled} />
-        {hasOverride && (
-          <button
-            type="button"
-            className="prop-row__btn"
-            title="Revert to source"
-            onClick={onRevert}
-          >
-            ↺
-          </button>
-        )}
-        {canDelete && !pendingDelete && (
-          <button
-            type="button"
-            className="prop-row__btn prop-row__btn--danger"
-            title="Remove from YAML (revert to LVGL default)"
-            onClick={onDelete}
-          >
-            ×
-          </button>
-        )}
-      </div>
-      {pendingDelete && (
-        <div className="prop-row__banner prop-row__banner--warn">
-          Pending removal — will be deleted from YAML on save
-        </div>
-      )}
-      {source?.viaVariable && !pendingDelete && (
-        <div className="prop-row__banner prop-row__banner--var">
-          Bound to{' '}
-          <code>
-            ${'{'}
-            {source.viaVariable}
-            {'}'}
-          </code>
-          {sub && (
-            <>
-              {' · '}edit affects {sub.usages.length} place{sub.usages.length === 1 ? '' : 's'}
-            </>
-          )}
-        </div>
-      )}
-      {source?.template && (
-        <div className="prop-row__banner">Mixed template — editing not supported yet.</div>
-      )}
-      {source && <OriginLine label="from" file={source.file} />}
-    </div>
-  );
-}
-
-function ReadOnlyRow({
-  label,
-  value,
-  source,
-  opaque,
-}: {
-  label: string;
-  value: string;
-  source?: PropSource;
-  opaque?: string;
-}) {
-  return (
-    <div className="prop-row prop-row--readonly">
-      <div className="prop-row__key">{label}</div>
-      <div className="prop-row__value">
-        {opaque ? <span className="prop-row__opaque">{opaque}</span> : <span>{value}</span>}
-      </div>
-      {source && <OriginLine label="from" file={source.file} />}
-    </div>
-  );
-}
-
-function OriginLine({ label, file }: { label: string; file: string }) {
-  if (!file) return null;
-  return (
-    <div className="prop-row__origin">
-      {label} <code>{shortFile(file)}</code>
-    </div>
+    <PropertyGroup key={item.key} label={item.label ?? item.key}>
+      {item.entries.map((child) => renderRow({ ...child, key: `${item.key}.${child.key}` }))}
+    </PropertyGroup>
   );
 }
 
