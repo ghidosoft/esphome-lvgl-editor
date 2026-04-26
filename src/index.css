@@ -864,9 +864,13 @@ body,
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  width: 14px;
+  min-width: 14px;
+  max-width: 64px;
   text-align: center;
   flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .inline-cell--dirty .inline-cell__label {
   color: var(--accent);

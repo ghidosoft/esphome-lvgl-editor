@@ -36,11 +36,22 @@ export function computeBox(
     const yAlignRaw = resolveProp<string>(widget, 'grid_cell_y_align', styles, theme);
     const xAlign = String(xAlignRaw ?? 'STRETCH').toUpperCase();
     const yAlign = String(yAlignRaw ?? 'STRETCH').toUpperCase();
-    const w = xAlign === 'STRETCH' || !hasDeclaredW ? slot.width : Math.min(slot.width, declaredW);
+    // STRETCH always fills the cell. For other alignments, use the declared
+    // size or — when undeclared — the intrinsic content size (LVGL's
+    // SIZE_CONTENT default). Without this fallback, alignment changes would
+    // be invisible whenever the child has no explicit width/height.
+    const intrinsicW = measure?.width ? measure.width() : slot.width;
+    const intrinsicH = measure?.height ? measure.height() : slot.height;
+    const w =
+      xAlign === 'STRETCH'
+        ? slot.width
+        : Math.min(slot.width, hasDeclaredW ? declaredW : intrinsicW);
     const h =
-      yAlign === 'STRETCH' || !hasDeclaredH ? slot.height : Math.min(slot.height, declaredH);
+      yAlign === 'STRETCH'
+        ? slot.height
+        : Math.min(slot.height, hasDeclaredH ? declaredH : intrinsicH);
     const x =
-      xAlign === 'STRETCH' || !hasDeclaredW
+      xAlign === 'STRETCH'
         ? slot.x
         : xAlign === 'END'
           ? slot.x + slot.width - w
@@ -48,7 +59,7 @@ export function computeBox(
             ? slot.x
             : slot.x + (slot.width - w) / 2;
     const y =
-      yAlign === 'STRETCH' || !hasDeclaredH
+      yAlign === 'STRETCH'
         ? slot.y
         : yAlign === 'END'
           ? slot.y + slot.height - h

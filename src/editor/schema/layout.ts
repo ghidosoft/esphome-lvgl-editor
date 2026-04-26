@@ -136,7 +136,7 @@ export const LAYOUT_SCHEMA: PropertySchema = [
     kind: 'number',
     min: 1,
     inline: 'half',
-    label: 'row span',
+    label: 'rspan',
     visibleWhen: { scope: 'parent', key: 'layout.type', equals: 'GRID' },
   },
   {
@@ -144,7 +144,7 @@ export const LAYOUT_SCHEMA: PropertySchema = [
     kind: 'number',
     min: 1,
     inline: 'half',
-    label: 'col span',
+    label: 'cspan',
     visibleWhen: { scope: 'parent', key: 'layout.type', equals: 'GRID' },
   },
   {
