@@ -1,4 +1,5 @@
 import { ARC_SCHEMA } from './arc';
+import { BAR_SCHEMA } from './bar';
 import { COMMON_SCHEMA } from './common';
 import { LABEL_SCHEMA } from './label';
 import { LAYOUT_SCHEMA } from './layout';
@@ -96,6 +97,7 @@ export function getSchema(widgetType: string): PropertySchema {
 
 const SPECIFIC_SCHEMAS: Record<string, PropertySchema> = {
   arc: ARC_SCHEMA,
+  bar: BAR_SCHEMA,
   label: LABEL_SCHEMA,
   slider: SLIDER_SCHEMA,
   spinner: SPINNER_SCHEMA,

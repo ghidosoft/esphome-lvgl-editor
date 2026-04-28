@@ -128,6 +128,20 @@ function buildTheme(t: Tokens): DefaultTheme {
         pad_all: 6,
       },
     },
+    bar: {
+      main: {
+        bg_color: t.trackMuted,
+        bg_opa: 1,
+        border_opa: 0,
+        radius: RADIUS_CIRCLE,
+      },
+      indicator: {
+        bg_color: t.primary,
+        bg_opa: 1,
+        border_opa: 0,
+        radius: RADIUS_CIRCLE,
+      },
+    },
     spinner: {
       main: {
         arc_color: t.grey,

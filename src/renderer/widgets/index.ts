@@ -1,6 +1,7 @@
 import type { LvglWidget } from '../../parser/types';
 import type { Box, RenderContext } from '../context';
 import { renderArc } from './arc';
+import { renderBar } from './bar';
 import { renderObj } from './obj';
 import { renderButton } from './button';
 import { renderLabel } from './label';
@@ -22,6 +23,7 @@ export const WIDGET_RENDERERS: Record<string, RenderFn> = {
   label: renderLabel,
   image: renderImage,
   arc: renderArc,
+  bar: renderBar,
   slider: renderSlider,
   spinner: renderSpinner,
 };

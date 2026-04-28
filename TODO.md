@@ -5,7 +5,6 @@ the tool gets used.
 
 ## Short-term (quality of life, MVP polish)
 
-- [ ] **`bar` widget**: horizontal progress bar (track + indicator). Like `slider` minus the knob.
 - [ ] **`switch` widget**: toggle with a sliding knob. Two-state, optionally bound to a Home Assistant entity.
 - [ ] **`checkbox` widget**: label + box, two-state, also used in dropdown/roller selection rows.
 - [ ] **Local image files**: support `file:` pointing at a disk path (serve via a `/__lvgl/asset/` endpoint sandboxed to `esphome/`).
