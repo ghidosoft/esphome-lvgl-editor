@@ -142,6 +142,61 @@ function buildTheme(t: Tokens): DefaultTheme {
         radius: RADIUS_CIRCLE,
       },
     },
+    checkbox: {
+      // LVGL: width_def = height_def = SIZE_CONTENT — the checkbox sizes
+      // itself to indicator + gap + label. The renderer's `measureCheckbox`
+      // produces those numbers; here we just signal the SIZE_CONTENT default.
+      main: {
+        width: 'SIZE_CONTENT',
+        height: 'SIZE_CONTENT',
+        text_color: t.text,
+        text_opa: 1,
+        bg_opa: 0,
+        border_opa: 0,
+        pad_column: 8,
+      },
+      indicator: {
+        // No bg_color set: the renderer flips between card (off) and primary
+        // (on) based on the checked state, mirroring how the default theme
+        // adds `bg_color_primary` only on `LV_STATE_CHECKED`.
+        bg_opa: 1,
+        border_color: t.primary,
+        border_width: 2,
+        border_opa: 1,
+        radius: 4,
+        pad_all: 3,
+      },
+    },
+    switch: {
+      // LVGL default: 40% of DPI × 23.5% of DPI. At a typical 130 DPI that's
+      // ~52×30; we round to a clean 50×25 to match what the cookbook samples
+      // produce on a 320×240 display.
+      main: {
+        width: 50,
+        height: 25,
+        bg_color: PALETTE.greyMain,
+        bg_opa: 1,
+        border_opa: 0,
+        radius: RADIUS_CIRCLE,
+      },
+      indicator: {
+        bg_color: t.primary,
+        bg_opa: 1,
+        border_opa: 0,
+        radius: RADIUS_CIRCLE,
+      },
+      knob: {
+        bg_color: PALETTE.white,
+        bg_opa: 1,
+        border_opa: 0,
+        radius: RADIUS_CIRCLE,
+        // Negative pad in LVGL's switch *shrinks* the knob (see lv_switch.c —
+        // `knob_area.x1 -= knob_left` with a negative pad insets the bbox).
+        // The default theme's value of -4 produces the iOS/Material look
+        // where the knob is slightly smaller than the track.
+        pad_all: -4,
+      },
+    },
     spinner: {
       main: {
         arc_color: t.grey,

@@ -2,12 +2,14 @@ import type { LvglWidget } from '../../parser/types';
 import type { Box, RenderContext } from '../context';
 import { renderArc } from './arc';
 import { renderBar } from './bar';
+import { renderCheckbox } from './checkbox';
 import { renderObj } from './obj';
 import { renderButton } from './button';
 import { renderLabel } from './label';
 import { renderImage } from './image';
 import { renderSlider } from './slider';
 import { renderSpinner } from './spinner';
+import { renderSwitch } from './switch';
 import { renderPlaceholder } from './placeholder';
 
 /**
@@ -24,8 +26,10 @@ export const WIDGET_RENDERERS: Record<string, RenderFn> = {
   image: renderImage,
   arc: renderArc,
   bar: renderBar,
+  checkbox: renderCheckbox,
   slider: renderSlider,
   spinner: renderSpinner,
+  switch: renderSwitch,
 };
 
 export function rendererFor(type: string): RenderFn {

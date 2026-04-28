@@ -1,10 +1,12 @@
 import { ARC_SCHEMA } from './arc';
 import { BAR_SCHEMA } from './bar';
+import { CHECKBOX_SCHEMA } from './checkbox';
 import { COMMON_SCHEMA } from './common';
 import { LABEL_SCHEMA } from './label';
 import { LAYOUT_SCHEMA } from './layout';
 import { SLIDER_SCHEMA } from './slider';
 import { SPINNER_SCHEMA } from './spinner';
+import { SWITCH_SCHEMA } from './switch';
 
 /**
  * Widget-type → editable property metadata. Keeps UI controls decoupled from
@@ -98,7 +100,9 @@ export function getSchema(widgetType: string): PropertySchema {
 const SPECIFIC_SCHEMAS: Record<string, PropertySchema> = {
   arc: ARC_SCHEMA,
   bar: BAR_SCHEMA,
+  checkbox: CHECKBOX_SCHEMA,
   label: LABEL_SCHEMA,
   slider: SLIDER_SCHEMA,
   spinner: SPINNER_SCHEMA,
+  switch: SWITCH_SCHEMA,
 };

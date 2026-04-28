@@ -3,6 +3,7 @@ import type { RenderContext } from './context';
 import { measureFlexContent } from './layout/flex';
 import { measureGridContent } from './layout/grid';
 import { resolveProp } from './styles';
+import { measureCheckbox } from './widgets/checkbox';
 import { measureLabel } from './widgets/label';
 
 /**
@@ -21,6 +22,9 @@ export function measureContent(
 ): { width: number; height: number } {
   if (widget.type === 'label') {
     return withPadding(widget, ctx, measureLabel(widget, ctx));
+  }
+  if (widget.type === 'checkbox') {
+    return withPadding(widget, ctx, measureCheckbox(widget, ctx));
   }
   return withPadding(widget, ctx, measureChildren(widget, ctx));
 }
