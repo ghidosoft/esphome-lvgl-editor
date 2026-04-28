@@ -1,0 +1,28 @@
+name: pack
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm pack
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: esphome-lvgl-editor-tarball-${{ github.sha }}
+          path: '*.tgz'
+          retention-days: 30
+          if-no-files-found: error
