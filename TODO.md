@@ -20,7 +20,6 @@ the tool gets used.
 
 ## Medium-term (open features)
 
-- [x] **`meter` widget**: tick scales with `arc` / `line` (needle) / `tick_style` indicators. Mirrors LVGL 8.4's `lv_meter` (the widget was dropped in 9.x but ESPHome still ships the v8 schema). `image:` needles draw a placeholder line for now — raster rotation around `pivot_x`/`pivot_y` is TODO.
 - [ ] **`buttonmatrix` widget**: grid of buttons defined inline (used by page-nav footers, numeric keypads, theme example). Self-contained: a single widget node renders multiple cells.
 - [ ] **`spinbox` widget**: numeric input with up/down buttons (climate control, keypad).
 - [ ] **`dropdown` / `roller` widgets**: collapsible / scrollable option pickers.
@@ -43,13 +42,7 @@ the tool gets used.
   - Config: HA URL + long-lived token in `.env.local`.
   - Fallback: mock values when disconnected.
 - [ ] **`async_online_image` stream**: support the real radar widget (fetch the 6 frame URLs from HA, crossfade like on the device).
-- [x] **Visual editing** (in progress, see `.claude/plans/buond-vorrei-iniziare-ad-refactored-quill.md`):
-  - [x] **P1** — parser migrated to `eemeli/yaml`, per-widget source map (file + yamlPath + viaVariable) and substitutions usage index.
-  - [x] **P2** — click-to-select on canvas with hit-testing, read-only Property/Variables tabs showing origin badges.
-  - [x] **P3** — editable MVP props (text, colors, geometry, padding) for literals, with `/__lvgl/edit` + `/__lvgl/commit` server endpoints and dirty-file save flow.
-  - [x] **P4** — var-aware write-back (edit propagates to the substitution definition with a "used by N widgets" confirmation), Variables panel editing, multi-file conflict detection.
 - [ ] **Drag & drop**: reposition widgets, move them across containers, create new ones from a palette. Needs precise hit-testing (the reason we picked Canvas 2D over WASM).
-- [x] **Global style editor**: Styles tab with schema-driven controls + add/remove/var-backed write-back.
 - [ ] **Sensor simulator**: sliders to fake temperature/humidity/etc. without HA — useful for mockups.
 - [x] **Public packaging**: ship as a CLI `npx esphome-lvgl-editor [path]` so it can be used against any ESPHome project, not just this repo. Bundled `samples/` from the cookbook for `--demo` mode. (See `samples/README.md` for the cookbook gap that gates the actual `npm publish`.)
 - [ ] **Monorepo consolidation**: if it goes public, fold `scripts/merge-lvgl.mjs` into the same package and have it use `lvgl-editor/src/parser` (share the logic instead of duplicating it).
