@@ -41,7 +41,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepublishOnly": "npm run build"
+    "prepack": "npm run build"
   },
   "dependencies": {
     "chokidar": "^4.0.0",
@@ -76,6 +76,6 @@
     "zod-validation-error": "^4.0.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }
