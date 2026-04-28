@@ -3,10 +3,15 @@
  *   - "0xRRGGBB"  (most common)
  *   - "#RRGGBB"
  *   - common LVGL named colors: black, white, red, green, blue, etc.
+ *   - bare integer (YAML parses unquoted `0xFF0000` as the number 16711680,
+ *     so we handle it too — interpreted as a 24-bit RGB value)
  *
  * Returns a CSS color string ("#rrggbb"). Falls back to fallback on parse failure.
  */
 export function parseColor(value: unknown, fallback = '#000000'): string {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 0xffffff) {
+    return `#${Math.floor(value).toString(16).padStart(6, '0')}`;
+  }
   if (typeof value !== 'string') return fallback;
   const v = value.trim();
   if (v.startsWith('0x') || v.startsWith('0X')) {

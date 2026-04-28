@@ -28,6 +28,8 @@ sidebar but show only the parts the editor already knows about.
 | [04-grid-layout.yaml](04-grid-layout.yaml) | [Grid layout positioning](https://esphome.io/cookbook/lvgl/#grid-layout-positioning) | GRID layout, FR units, `grid_cell_*_pos`, `grid_cell_column_span` |
 | [05-boot-screen.yaml](05-boot-screen.yaml) | [ESPHome boot screen](https://esphome.io/cookbook/lvgl/#esphome-boot-screen) | full-screen `obj` overlay, `spinner`, nested centered content |
 | [06-multi-page.yaml](06-multi-page.yaml) | [Page navigation footer](https://esphome.io/cookbook/lvgl/#page-navigation-footer) (adapted) | multiple `pages`, `on_click: lvgl.page.show` navigation |
+| [13-analog-clock.yaml](13-analog-clock.yaml) | [Analog clock](https://esphome.io/cookbook/lvgl/#analog-clock) | `meter` with full-circle scale, hour/minute `line` needles |
+| [14-thermometer.yaml](14-thermometer.yaml) | [Thermometer](https://esphome.io/cookbook/lvgl/#meter) | dual-scale `meter`, `tick_style` colour gradient, percent-based needle |
 
 ## Pending renderer support
 
@@ -43,7 +45,6 @@ implemented.
 | [10-climate-spinbox.yaml](10-climate-spinbox.yaml) | [Climate control](https://esphome.io/cookbook/lvgl/#climate-control) | `spinbox` |
 | [11-checkbox-list.yaml](11-checkbox-list.yaml) | [Checkbox](https://esphome.io/cookbook/lvgl/#checkbox) | `checkbox` |
 | [12-roller-picker.yaml](12-roller-picker.yaml) | [Roller](https://esphome.io/cookbook/lvgl/#roller) | `roller` / `dropdown` |
-| [13-analog-clock.yaml](13-analog-clock.yaml) | [Analog clock](https://esphome.io/cookbook/lvgl/#analog-clock) | `meter`, `line` indicators |
 
 ## Roadmap: gaps still uncovered by samples
 
