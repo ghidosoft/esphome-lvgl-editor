@@ -108,19 +108,26 @@ export function renderArc(w: LvglWidget, box: Box, ctx: RenderContext): Box {
     c.stroke();
   }
 
-  // Knob: drawn at the indicator's end angle when `adjustable: true` or when
-  // the YAML provides an inline `knob:` block. LVGL renders the knob as a
-  // small filled circle whose nominal size matches the arc width minus the
-  // knob's `pad_all` (which inflates *outward* in LVGL — kept positive here so
-  // a non-zero value grows the knob past the arc stroke).
-  const adjustable = bool(resolveProp(w, 'adjustable', styles, theme), false);
-  const hasKnobBlock =
-    !!w.props.knob && typeof w.props.knob === 'object' && !Array.isArray(w.props.knob);
-  if (adjustable || hasKnobBlock) {
-    const knobBg = parseColor(
-      resolvePartProp(w, 'knob', 'bg_color', styles, theme),
-      indColor,
-    );
+  // Knob: always drawn at the indicator's end angle (LVGL's `lv_arc_event`
+  // calls `draw_knob` on every DRAW_POST, regardless of `adjustable` —
+  // `adjustable` only controls clickability/dragging, not visibility). Hide
+  // it via `knob: { bg_opa: 0 }`.
+  //
+  // Diameter formula matches `lv_arc.c::get_knob_area`:
+  //   diameter = indic_width + max(pad_top/right/bottom/left) + 2
+  // (the +2 is LVGL's "extra" constant). Outline is approximated via
+  // `border_*`. The knob's centre sits on the indicator's centreline — same
+  // radius `r` we used for the arc strokes.
+  if (indSpanDeg > 0) {
+    const knobPad = num(resolvePartProp(w, 'knob', 'pad_all', styles, theme), 0);
+    const padTop = num(resolvePartProp(w, 'knob', 'pad_top', styles, theme), knobPad);
+    const padRight = num(resolvePartProp(w, 'knob', 'pad_right', styles, theme), knobPad);
+    const padBottom = num(resolvePartProp(w, 'knob', 'pad_bottom', styles, theme), knobPad);
+    const padLeft = num(resolvePartProp(w, 'knob', 'pad_left', styles, theme), knobPad);
+    const maxPad = Math.max(padTop, padRight, padBottom, padLeft);
+    const knobDiameter = indWidth + maxPad + 2;
+    const knobRadius = Math.max(0, knobDiameter / 2);
+    const knobBg = parseColor(resolvePartProp(w, 'knob', 'bg_color', styles, theme), indColor);
     const knobOpa = parseOpacity(resolvePartProp(w, 'knob', 'bg_opa', styles, theme), 1);
     const knobBorderColor = parseColor(
       resolvePartProp(w, 'knob', 'border_color', styles, theme),
@@ -134,8 +141,6 @@ export function renderArc(w: LvglWidget, box: Box, ctx: RenderContext): Box {
       resolvePartProp(w, 'knob', 'border_opa', styles, theme),
       0,
     );
-    const knobPad = num(resolvePartProp(w, 'knob', 'pad_all', styles, theme), 0);
-    const knobRadius = Math.max(0, indWidth / 2 + knobPad);
     const kx = cx + r * Math.cos(indEndRad);
     const ky = cy + r * Math.sin(indEndRad);
     if (knobOpa > 0 && knobRadius > 0) {
