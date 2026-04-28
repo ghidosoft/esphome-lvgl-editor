@@ -3,7 +3,7 @@ import { contentBox } from '../boxes';
 import { parseColor, parseOpacity, withAlpha } from '../colors';
 import type { Box, RenderContext } from '../context';
 import { resolveFont } from '../fonts';
-import { resolveProp } from '../styles';
+import { resolvePartProp, resolveProp } from '../styles';
 import { renderObj } from './obj';
 
 /**
@@ -59,7 +59,40 @@ export function renderMeter(w: LvglWidget, box: Box, ctx: RenderContext): Box {
     if (!rawScale || typeof rawScale !== 'object' || Array.isArray(rawScale)) continue;
     drawScale(ctx, w, rawScale as Record<string, unknown>, cx, cy, rEdge);
   }
+
+  drawPivotDot(ctx, w, cx, cy);
   return box;
+}
+
+/**
+ * Central pivot dot — LVGL's meter draws this on `LV_EVENT_DRAW_MAIN` as a
+ * rect (rendered as a circle thanks to `radius: LV_RADIUS_CIRCLE` from the
+ * theme) with size, colour and opacity taken from the INDICATOR part. The
+ * default theme sets size=15, bg_color=text_color, bg_opa=COVER, which is
+ * what produces the small dark dot at the rotation centre of the needles.
+ *
+ * Drawn after the scales so it sits on top of the needle origins.
+ */
+function drawPivotDot(ctx: RenderContext, w: LvglWidget, cx: number, cy: number) {
+  const styles = ctx.project.styles;
+  const theme = ctx.theme;
+  const bgOpa = parseOpacity(resolvePartProp(w, 'indicator', 'bg_opa', styles, theme), 1);
+  if (bgOpa <= 0) return;
+  const width = num(resolvePartProp(w, 'indicator', 'width', styles, theme), 0);
+  const height = num(resolvePartProp(w, 'indicator', 'height', styles, theme), width);
+  if (width <= 0 || height <= 0) return;
+  const bgColor = parseColor(resolvePartProp(w, 'indicator', 'bg_color', styles, theme), '#212121');
+  const c = ctx.ctx;
+  c.save();
+  c.fillStyle = bgOpa < 1 ? withAlpha(bgColor, bgOpa) : bgColor;
+  c.beginPath();
+  // The theme fixes radius to LV_RADIUS_CIRCLE, which on a width=height bbox
+  // produces a circle. We always treat the pivot as circular (using the
+  // smaller of the two halves as the radius) — meter pivots that aren't
+  // round don't appear in any cookbook example.
+  c.ellipse(cx, cy, width / 2, height / 2, 0, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
 }
 
 interface ScaleParsed {
@@ -189,10 +222,24 @@ function drawTicks(
   const majorRadialOffset = major ? num(major.radial_offset, radialOffset) : radialOffset;
   const labelGap = major ? num(major.label_gap, 4) : 0;
 
-  // Major-tick label font follows the meter's `text_font` (or the theme).
+  // Major-tick labels read `text_font` and `text_color` from the MAIN part
+  // (or the theme fallback). `major.color` only paints the tick line itself,
+  // not the label glyphs — that's why the cookbook clock can have grey ticks
+  // (`color: 0xC0C0C0`) but black numbers (`text_color: 0x000000`).
   const fontId = resolveProp<string>(w, 'text_font', ctx.project.styles, ctx.theme);
   const font = resolveFont(fontId, ctx.project.fonts);
+  const labelColor = parseColor(
+    resolveProp(w, 'text_color', ctx.project.styles, ctx.theme),
+    '#212121',
+  );
 
+  // Note on full-circle wrap: when angle_range is a multiple of 360°, the
+  // tick at i=count-1 lands on the same pixel as i=0. LVGL (both v8 meter
+  // and v9 scale) draws both; we mirror that behaviour for fidelity. If you
+  // want a clean clock face, use a scale without `major:` for the ticks
+  // (drives the needles only) and a separate label-bearing scale dimensioned
+  // to avoid the wrap (e.g. count=12, angle_range=330) — that's what the
+  // ESPHome analog-clock cookbook does.
   c.save();
   for (let i = 0; i < count; i++) {
     const t = i / (count - 1);
@@ -232,7 +279,7 @@ function drawTicks(
     if (isMajor && major) {
       const rText = rInner - labelGap;
       c.font = font;
-      c.fillStyle = majorColor;
+      c.fillStyle = labelColor;
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.fillText(formatTickLabel(value), cx + cos * rText, cy + sin * rText);

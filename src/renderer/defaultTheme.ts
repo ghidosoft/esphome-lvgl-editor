@@ -246,6 +246,16 @@ function buildTheme(t: Tokens): DefaultTheme {
         radius: RADIUS_CIRCLE,
         text_color: t.text,
       },
+      // INDICATOR part drives the central pivot dot under the needles
+      // (`drawPivotDot` in widgets/meter.ts). LVGL's default theme sets
+      // size=15 (via lv_style_set_size), bg_color=text token, full circle.
+      indicator: {
+        width: 15,
+        height: 15,
+        bg_color: t.text,
+        bg_opa: 1,
+        radius: RADIUS_CIRCLE,
+      },
     },
   };
 }

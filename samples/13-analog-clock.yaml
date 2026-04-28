@@ -1,11 +1,22 @@
 # Cookbook: "Analog clock"
 # https://esphome.io/cookbook/lvgl/#analog-clock
 #
-# A circular `meter` configured with hour ticks and two indicator lines acting
-# as hour and minute hands. Demonstrates: meter with scales, tick_style major
-# strides, line indicators with explicit values. Hands keep the cookbook's
-# explicit black `color: 0x000000` (semantic — they need to read on top of
-# the meter face); the meter face itself is the LVGL default theme.
+# A `meter` styled as an analog clock face with three scales:
+#   - "minutes scale" (0..60, 360°): drives the minute hand. No `major:`,
+#     so its tick ladder is plain — no labels and therefore no
+#     "0/60" double-print at 12 o'clock.
+#   - "hours scale for labels" (1..12, 330° rotated to 300°): only purpose
+#     is the 12 major-tick labels around the dial. The 330° span (instead
+#     of 360°) keeps the "12" alone at the top — there's no ambiguity
+#     between 1..12 and 0..12.
+#   - "hi-res hours scale" (0..720, 360°): no ticks, only the hour hand.
+#     720 = 12 × 60 — gives sub-tick precision so the hour hand creeps
+#     between numbers as the minutes pass.
+#
+# The on-device wiring uses `time:` + `script:` to push live values via
+# `lvgl.indicator.update`; for the static preview we hard-code 10:10
+# (`minute_hand: value: 10`, `hour_hand: value: 610`) and a fixed date so
+# the dial reads at a glance.
 
 esphome:
   name: lvgl-sample-analog-clock
@@ -16,38 +27,80 @@ display:
       height: 240
 
 lvgl:
+  style_definitions:
+    - id: date_style
+      align: center
+      text_color: 0x000000
+      bg_opa: 60%
+      radius: 4
+      pad_all: 2
   pages:
-    - id: main_page
+    - id: clock_page
       widgets:
-        - meter:
-            id: clock
+        - obj:
+            height: SIZE_CONTENT
+            width: 240
             align: CENTER
-            width: 200
-            height: 200
-            scales:
-              - range_from: 0
-                range_to: 60
-                angle_range: 360
-                rotation: 270
-                ticks:
-                  count: 61
-                  width: 1
-                  length: 8
-                  major:
-                    stride: 5
-                    width: 3
-                    length: 14
-                    label_gap: 14
-                indicators:
-                  - line:
-                      id: minute_hand
-                      width: 3
-                      color: 0x000000
-                      length: 80
-                      value: 24
-                  - line:
-                      id: hour_hand
-                      width: 5
-                      color: 0x000000
-                      length: 50
-                      value: 50
+            pad_all: 0
+            border_width: 0
+            bg_color: 0xFFFFFF
+            widgets:
+              - meter:
+                  height: 220
+                  width: 220
+                  align: CENTER
+                  bg_opa: TRANSP
+                  border_width: 0
+                  text_color: 0x000000
+                  scales:
+                    - range_from: 0
+                      range_to: 60
+                      angle_range: 360
+                      rotation: 270
+                      ticks:
+                        width: 1
+                        count: 61
+                        length: 10
+                        color: 0x000000
+                      indicators:
+                        - line:
+                            id: minute_hand
+                            width: 3
+                            color: 0xa6a6a6
+                            length: 96%
+                            value: 10
+                    - range_from: 1
+                      range_to: 12
+                      angle_range: 330
+                      rotation: 300
+                      ticks:
+                        width: 1
+                        count: 12
+                        length: 1
+                        major:
+                          stride: 1
+                          width: 4
+                          length: 10
+                          color: 0xC0C0C0
+                          label_gap: 12
+                    - range_from: 0
+                      range_to: 720
+                      angle_range: 360
+                      rotation: 270
+                      indicators:
+                        - line:
+                            id: hour_hand
+                            width: 5
+                            color: 0xa6a6a6
+                            length: 70%
+                            value: 610
+              - label:
+                  styles: date_style
+                  id: day_label
+                  y: -30
+                  text: 'TUE'
+              - label:
+                  id: date_label
+                  styles: date_style
+                  y: 30
+                  text: 'APR 28'
