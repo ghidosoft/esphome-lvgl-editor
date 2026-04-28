@@ -5,7 +5,6 @@ the tool gets used.
 
 ## Short-term (quality of life, MVP polish)
 
-- [ ] **`arc` widget**: used in LVGL for gauges / progress rings. Render similar to `spinner` but driven by `value` + `min_value`/`max_value`.
 - [ ] **`bar` widget**: horizontal progress bar (track + indicator). Like `slider` minus the knob.
 - [ ] **`switch` widget**: toggle with a sliding knob. Two-state, optionally bound to a Home Assistant entity.
 - [ ] **`checkbox` widget**: label + box, two-state, also used in dropdown/roller selection rows.

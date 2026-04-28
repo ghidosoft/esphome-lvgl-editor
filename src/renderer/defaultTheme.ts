@@ -142,6 +142,28 @@ function buildTheme(t: Tokens): DefaultTheme {
         arc_rounded: true,
       },
     },
+    arc: {
+      main: {
+        arc_color: t.grey,
+        arc_opa: 1,
+        arc_width: 10,
+        arc_rounded: true,
+      },
+      indicator: {
+        arc_color: t.primary,
+        arc_opa: 1,
+        arc_width: 10,
+        arc_rounded: true,
+      },
+      knob: {
+        bg_color: t.primary,
+        bg_opa: 1,
+        border_opa: 0,
+        border_width: 0,
+        radius: RADIUS_CIRCLE,
+        pad_all: 0,
+      },
+    },
   };
 }
 
