@@ -5,8 +5,6 @@ the tool gets used.
 
 ## Short-term (quality of life, MVP polish)
 
-- [ ] **`switch` widget**: toggle with a sliding knob. Two-state, optionally bound to a Home Assistant entity.
-- [ ] **`checkbox` widget**: label + box, two-state, also used in dropdown/roller selection rows.
 - [ ] **Local image files**: support `file:` pointing at a disk path (serve via a `/__lvgl/asset/` endpoint sandboxed to `esphome/`).
 - [ ] **`grid_cell_*_align: CENTER/START/END`** non-STRETCH: only partially handled — verify against real usage.
 - [ ] **`pad_row`/`pad_column` on layout-less containers**: today only `pad_all` is honoured as inset; per-axis padding isn't.
