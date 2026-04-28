@@ -233,6 +233,20 @@ function buildTheme(t: Tokens): DefaultTheme {
         pad_all: 0,
       },
     },
+    meter: {
+      // LVGL 8.x default theme: card + circle. The meter draws as a circular
+      // card by default; cookbook examples opt out via `bg_opa: 0` when they
+      // want a bare gauge.
+      main: {
+        bg_color: t.card,
+        bg_opa: 1,
+        border_color: t.grey,
+        border_opa: 1,
+        border_width: 1,
+        radius: RADIUS_CIRCLE,
+        text_color: t.text,
+      },
+    },
   };
 }
 

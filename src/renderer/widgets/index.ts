@@ -7,6 +7,7 @@ import { renderObj } from './obj';
 import { renderButton } from './button';
 import { renderLabel } from './label';
 import { renderImage } from './image';
+import { renderMeter } from './meter';
 import { renderSlider } from './slider';
 import { renderSpinner } from './spinner';
 import { renderSwitch } from './switch';
@@ -27,6 +28,7 @@ export const WIDGET_RENDERERS: Record<string, RenderFn> = {
   arc: renderArc,
   bar: renderBar,
   checkbox: renderCheckbox,
+  meter: renderMeter,
   slider: renderSlider,
   spinner: renderSpinner,
   switch: renderSwitch,

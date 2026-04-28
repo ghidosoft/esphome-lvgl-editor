@@ -20,7 +20,7 @@ the tool gets used.
 
 ## Medium-term (open features)
 
-- [ ] **`meter` widget**: tick scales with line/arc indicators. Powers the gauge / thermometer / analog clock cookbook examples. Needs a `lv_meter` mini-renderer (scales → ticks, indicators positioned by angle).
+- [x] **`meter` widget**: tick scales with `arc` / `line` (needle) / `tick_style` indicators. Mirrors LVGL 8.4's `lv_meter` (the widget was dropped in 9.x but ESPHome still ships the v8 schema). `image:` needles draw a placeholder line for now — raster rotation around `pivot_x`/`pivot_y` is TODO.
 - [ ] **`buttonmatrix` widget**: grid of buttons defined inline (used by page-nav footers, numeric keypads, theme example). Self-contained: a single widget node renders multiple cells.
 - [ ] **`spinbox` widget**: numeric input with up/down buttons (climate control, keypad).
 - [ ] **`dropdown` / `roller` widgets**: collapsible / scrollable option pickers.
