@@ -14,10 +14,9 @@ export interface FlexSlot {
  * (SIZE_CONTENT and percentages expanded by the caller). The engine treats
  * them as given.
  *
- * Cross axis: children are centered.
- *
  * `flex_align_main` understood values: START (default), CENTER, END,
  * SPACE_BETWEEN, SPACE_EVENLY, SPACE_AROUND.
+ * `flex_align_cross` understood values: START, CENTER (LVGL default), END.
  */
 export function layoutFlex(
   spec: FlexLayoutSpec,
@@ -63,11 +62,17 @@ export function layoutFlex(
       break;
   }
 
+  const crossAlign = (spec.flex_align_cross ?? 'CENTER').toUpperCase();
   const slots: FlexSlot[] = [];
   let cursor = mainStart;
   for (let i = 0; i < childSizes.length; i++) {
     const s = sizes[i];
-    const crossOffset = (crossTotal - s.cross) / 2;
+    const crossOffset =
+      crossAlign === 'START'
+        ? 0
+        : crossAlign === 'END'
+          ? crossTotal - s.cross
+          : (crossTotal - s.cross) / 2;
     if (isRow) {
       slots.push({ x: cursor, y: crossOffset, width: s.main, height: s.cross });
     } else {
