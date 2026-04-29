@@ -46,7 +46,18 @@ if (!existsSync(distClient) || !existsSync(resolve(distClient, 'index.html'))) {
 }
 
 const router = createLvglRouter({ esphomeDir });
-const serveStatic = sirv(distClient, { single: true, dev: false });
+const serveStatic = sirv(distClient, {
+  single: true,
+  dev: false,
+  immutable: true,
+  maxAge: 31536000,
+  setHeaders(res, pathname) {
+    // No extension = SPA fallback / index.html — force revalidate.
+    if (!/\.[a-z0-9]+$/i.test(pathname)) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    }
+  },
+});
 
 const server = http.createServer((req, res) => {
   if (req.url?.startsWith('/__lvgl')) return router.handle(req, res);
