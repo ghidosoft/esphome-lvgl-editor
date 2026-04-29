@@ -1,6 +1,6 @@
 {
   "name": "esphome-lvgl-editor",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "type": "module",
   "description": "Web preview & visual editor for ESPHome LVGL configs.",
   "author": "Andrea Ghidini <looptribe@gmail.com>",
