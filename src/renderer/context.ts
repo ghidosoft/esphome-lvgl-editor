@@ -20,6 +20,13 @@ export interface RenderContext {
   /** When set, render the matching widget as if this LVGL state were active. */
   activeState?: PreviewState;
   activeStateWidgetId?: WidgetId;
+  /**
+   * Per-widget scroll position keyed by `WidgetId`. The renderer reads this to
+   * shift the inner box used for child layout, mimicking LVGL's
+   * `scroll_x`/`scroll_y` runtime state. Values may be unclamped — the
+   * renderer clamps against the freshly measured content size.
+   */
+  scrollOffsets?: Record<WidgetId, { x: number; y: number }>;
 }
 
 export interface Box {

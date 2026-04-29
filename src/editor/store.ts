@@ -64,6 +64,13 @@ export interface EditorState {
    * device — flip it on to work on modal overlays without touching the source.
    */
   showHidden: boolean;
+  /**
+   * Per-scrollable-widget scroll position, mirroring the LVGL `scroll_x` /
+   * `scroll_y` runtime state. Reset on page change (positions are page-local).
+   * The renderer reads this to offset child layout; the wheel handler writes
+   * to it after clamping against the latest content size.
+   */
+  scrollOffsets: Record<WidgetId, { x: number; y: number }>;
   saveError: string | null;
 
   setSelected: (id: WidgetId | null) => void;
@@ -95,6 +102,10 @@ export interface EditorState {
   ) => void;
   clearOverrides: () => void;
   setShowHidden: (v: boolean) => void;
+  /** Set the absolute scroll position of `id`. Caller is responsible for clamping. */
+  setScrollOffset: (id: WidgetId, x: number, y: number) => void;
+  /** Drop all scroll positions — invoked on page change. */
+  clearScrollOffsets: () => void;
   setSaveError: (e: string | null) => void;
 }
 
@@ -110,6 +121,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   styleDeletions: {},
   projectOverrides: {},
   showHidden: false,
+  scrollOffsets: {},
   saveError: null,
 
   // Reset the forced state whenever the selection changes — Chromium-style
@@ -216,6 +228,9 @@ export const useEditorStore = create<EditorState>((set) => ({
       projectOverrides: {},
     }),
   setShowHidden: (v) => set({ showHidden: v }),
+  setScrollOffset: (id, x, y) =>
+    set((s) => ({ scrollOffsets: { ...s.scrollOffsets, [id]: { x, y } } })),
+  clearScrollOffsets: () => set({ scrollOffsets: {} }),
   setSaveError: (e) => set({ saveError: e }),
 }));
 
