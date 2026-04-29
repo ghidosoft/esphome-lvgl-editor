@@ -187,9 +187,23 @@ body,
   cursor: crosshair;
 }
 .device-frame__caption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 11px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+.device-frame__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+.device-frame__toggle input {
+  margin: 0;
+  cursor: pointer;
 }
 
 /* ---------- Canvas wrapper + selection overlay ---------- */

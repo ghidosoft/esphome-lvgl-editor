@@ -31,6 +31,13 @@ export interface RenderOptions {
   activeState?: PreviewState;
   /** Which widget the `activeState` applies to. Scoped per Chromium DevTools. */
   activeStateWidgetId?: WidgetId;
+  /**
+   * Render widgets marked `hidden: true` instead of skipping them. Off by
+   * default so the preview matches the LVGL runtime — flipping it on is the
+   * editor escape hatch for working on widgets (e.g. modal overlays) that are
+   * normally invisible at startup.
+   */
+  showHidden?: boolean;
 }
 
 export class CanvasStage {
@@ -136,7 +143,7 @@ export class CanvasStage {
     c.fillStyle = bg;
     c.fillRect(0, 0, width, height);
 
-    const { activeState, activeStateWidgetId } = this.currentOptions;
+    const { activeState, activeStateWidgetId, showHidden } = this.currentOptions;
     const ctx: RenderContext = {
       ctx: c,
       project,
@@ -149,7 +156,7 @@ export class CanvasStage {
     const root: Box = { x: 0, y: 0, width, height };
     const hits: HitEntry[] = [];
     for (const widget of page.widgets) {
-      renderWidget(widget, root, undefined, ctx, hits, 0);
+      renderWidget(widget, root, undefined, ctx, hits, 0, showHidden ?? false);
     }
     this.hitList = hits;
     if (!opts.skipHitNotify) this.onHitListCb?.(hits);
@@ -181,7 +188,11 @@ function renderWidget(
   ctx: RenderContext,
   hits: HitEntry[],
   depth: number,
+  showHidden: boolean,
 ): void {
+  // LVGL `hidden: true` removes the widget (and its subtree) from rendering and
+  // hit-testing. `showHidden` is the editor override that draws them anyway.
+  if (!showHidden && isHidden(widget)) return;
   // If this is the selected widget and a state is forced, shallow-merge the
   // corresponding `pressed:` / `checked:` / `disabled:` block onto props so
   // every resolveProp() call downstream reads the state-scoped value without
@@ -227,7 +238,7 @@ function renderWidget(
           width: cell.width,
           height: cell.height,
         };
-        renderWidget(child, inner, slot, ctx, hits, depth + 1);
+        renderWidget(child, inner, slot, ctx, hits, depth + 1, showHidden);
       }
       return;
     }
@@ -245,13 +256,13 @@ function renderWidget(
       for (let i = 0; i < widget.children.length; i++) {
         const s = slots[i];
         const slot: Box = { x: inner.x + s.x, y: inner.y + s.y, width: s.width, height: s.height };
-        renderWidget(widget.children[i], inner, slot, ctx, hits, depth + 1);
+        renderWidget(widget.children[i], inner, slot, ctx, hits, depth + 1, showHidden);
       }
       return;
     }
 
     for (const child of widget.children) {
-      renderWidget(child, inner, undefined, ctx, hits, depth + 1);
+      renderWidget(child, inner, undefined, ctx, hits, depth + 1, showHidden);
     }
   } finally {
     c.restore();
@@ -302,4 +313,14 @@ function maybeForceState(widget: LvglWidget, ctx: RenderContext): LvglWidget {
     ...widget,
     props: { ...widget.props, ...(themeBag ?? {}), ...(inlineBag ?? {}) },
   };
+}
+
+/**
+ * True when the widget declares `hidden: true` in its YAML. Accepts both the
+ * boolean (the usual yaml-parsed shape) and the explicit string "true" as a
+ * defensive measure for hand-quoted configs.
+ */
+function isHidden(widget: LvglWidget): boolean {
+  const v = widget.props.hidden;
+  return v === true || v === 'true';
 }

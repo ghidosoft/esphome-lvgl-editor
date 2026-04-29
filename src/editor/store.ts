@@ -58,6 +58,12 @@ export interface EditorState {
   styleDeletions: Record<string, string[]>;
   /** Pending edits to display dimensions and theme. */
   projectOverrides: ProjectOverrides;
+  /**
+   * Editor-only preview toggle: when true the canvas renders widgets even if
+   * their YAML has `hidden: true`. Off by default so the preview matches the
+   * device — flip it on to work on modal overlays without touching the source.
+   */
+  showHidden: boolean;
   saveError: string | null;
 
   setSelected: (id: WidgetId | null) => void;
@@ -88,6 +94,7 @@ export interface EditorState {
     value: ProjectOverrides[K] | undefined,
   ) => void;
   clearOverrides: () => void;
+  setShowHidden: (v: boolean) => void;
   setSaveError: (e: string | null) => void;
 }
 
@@ -102,6 +109,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   widgetDeletions: {},
   styleDeletions: {},
   projectOverrides: {},
+  showHidden: false,
   saveError: null,
 
   // Reset the forced state whenever the selection changes — Chromium-style
@@ -207,6 +215,7 @@ export const useEditorStore = create<EditorState>((set) => ({
       styleDeletions: {},
       projectOverrides: {},
     }),
+  setShowHidden: (v) => set({ showHidden: v }),
   setSaveError: (e) => set({ saveError: e }),
 }));
 
