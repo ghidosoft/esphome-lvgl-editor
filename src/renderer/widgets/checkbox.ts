@@ -32,7 +32,7 @@ export function renderCheckbox(w: LvglWidget, box: Box, ctx: RenderContext): Box
   const c = ctx.ctx;
   c.save();
   c.font = fontStr;
-  const lineHeight = fontHeight(c);
+  const lineHeight = lvLineHeight(fontStr);
   const emSize = parseEmSize(fontStr);
 
   const indPad = num(resolvePartProp(w, 'indicator', 'pad_all', styles, theme), 3);
@@ -121,7 +121,7 @@ export function measureCheckbox(
   const c = ctx.ctx;
   c.save();
   c.font = fontStr;
-  const lineHeight = fontHeight(c);
+  const lineHeight = lvLineHeight(fontStr);
   const textWidth = text === '' ? 0 : c.measureText(text).width;
   c.restore();
   const indPad = num(resolvePartProp(w, 'indicator', 'pad_all', styles, theme), 3);
@@ -184,17 +184,15 @@ function primaryColor(theme: {
   return typeof v === 'string' ? v : '#2196f3';
 }
 
-function fontHeight(c: CanvasRenderingContext2D): number {
-  const m = c.measureText('M');
-  const a = m.fontBoundingBoxAscent;
-  const d = m.fontBoundingBoxDescent;
-  if (typeof a === 'number' && typeof d === 'number') return a + d;
-  return 14;
-}
-
 function parseEmSize(font: string): number {
   const m = /(\d+)px/.exec(font);
   return m ? parseInt(m[1], 10) : 14;
+}
+
+// LVGL line-height (Montserrat: em * 8/7 → 14→16, 18→21). Web fontBoundingBox
+// runs ~em*1.3 and pushes flex containers into spurious overflow.
+function lvLineHeight(font: string): number {
+  return Math.round((parseEmSize(font) * 8) / 7);
 }
 
 function num(v: unknown, fallback: number): number {

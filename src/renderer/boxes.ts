@@ -73,8 +73,10 @@ export function computeBox(
   const dy = numProp(resolveProp(widget, 'y', styles, theme), 0);
   const alignRaw = resolveProp<string>(widget, 'align', styles, theme);
   const align = typeof alignRaw === 'string' ? alignRaw : 'TOP_LEFT';
-  const w = hasDeclaredW ? declaredW : parent.width;
-  const h = hasDeclaredH ? declaredH : parent.height;
+  const intrinsicW = measure?.width ? measure.width() : parent.width;
+  const intrinsicH = measure?.height ? measure.height() : parent.height;
+  const w = hasDeclaredW ? declaredW : intrinsicW;
+  const h = hasDeclaredH ? declaredH : intrinsicH;
   const offset = alignChild(align, parent, { width: w, height: h }, dx, dy);
   return { x: parent.x + offset.x, y: parent.y + offset.y, width: w, height: h };
 }
@@ -138,6 +140,8 @@ export function numProp(v: unknown, fallback: number): number {
  *   - "SIZE_CONTENT" resolved via `measureContent` when provided — otherwise
  *     falls back to parentSize (same coarse behaviour as before the measure
  *     pass existed, so call sites without a measure callback don't regress)
+ * Undeclared (`v == null`) is treated as `SIZE_CONTENT` to match LVGL, where
+ * the default for any obj's width/height is `LV_SIZE_CONTENT`.
  * Negative percentages clamp to 0. Malformed percentages bail to parentSize.
  */
 export function sizeProp(v: unknown, parentSize: number, measureContent?: () => number): number {
@@ -152,5 +156,6 @@ export function sizeProp(v: unknown, parentSize: number, measureContent?: () => 
     const n = Number(trimmed);
     if (!Number.isNaN(n)) return n;
   }
+  if (v == null && measureContent) return measureContent();
   return parentSize;
 }

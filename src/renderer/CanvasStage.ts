@@ -356,7 +356,7 @@ function boundsOfSlots(slots: Box[]): { width: number; height: number } {
     if (s.x + s.width > w) w = s.x + s.width;
     if (s.y + s.height > h) h = s.y + s.height;
   }
-  return { width: w, height: h };
+  return { width: Math.floor(w), height: Math.floor(h) };
 }
 
 function clamp(n: number, lo: number, hi: number): number {
