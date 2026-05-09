@@ -30,6 +30,7 @@ sidebar but show only the parts the editor already knows about.
 | [06-multi-page.yaml](06-multi-page.yaml) | [Page navigation footer](https://esphome.io/cookbook/lvgl/#page-navigation-footer) (adapted) | multiple `pages`, `on_click: lvgl.page.show` navigation |
 | [13-analog-clock.yaml](13-analog-clock.yaml) | [Analog clock](https://esphome.io/cookbook/lvgl/#analog-clock) | `meter` with full-circle scale, hour/minute `line` needles |
 | [14-thermometer.yaml](14-thermometer.yaml) | [Thermometer](https://esphome.io/cookbook/lvgl/#meter) | dual-scale `meter`, `tick_style` colour gradient, percent-based needle |
+| [15-label-styles.yaml](15-label-styles.yaml) | (no cookbook equivalent — editor-feature showcase) | `text_align: LEFT/CENTER/RIGHT`, `long_mode: WRAP/BREAK/DOT` |
 
 ## Pending renderer support
 

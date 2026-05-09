@@ -1,0 +1,122 @@
+# Cookbook: label text styling
+#
+# Showcase for label-specific properties the editor renders:
+#   - `text_align: LEFT/CENTER/RIGHT` (independent from the widget's `align:`)
+#   - `long_mode: WRAP` (word-wrap multi-line)
+#   - `long_mode: BREAK` (char-wrap multi-line)
+#   - `long_mode: DOT` (single-line ellipsis)
+#
+# Each label sits inside a bordered `obj` so the alignment / wrapping is
+# visible against the box edges.
+
+esphome:
+  name: lvgl-sample-label-styles
+
+display:
+  - dimensions:
+      width: 320
+      height: 240
+
+lvgl:
+  pages:
+    - id: main_page
+      widgets:
+        - label:
+            align: TOP_MID
+            y: 4
+            text: 'Label styles'
+
+        # text_align LEFT / CENTER / RIGHT, each label fills a fixed-width box
+        - obj:
+            align: TOP_LEFT
+            x: 8
+            y: 28
+            width: 96
+            height: 32
+            bg_opa: TRANSP
+            border_width: 1
+            pad_all: 4
+            widgets:
+              - label:
+                  align: CENTER
+                  width: 100%
+                  text: 'LEFT'
+                  text_align: LEFT
+        - obj:
+            align: TOP_MID
+            y: 28
+            width: 96
+            height: 32
+            bg_opa: TRANSP
+            border_width: 1
+            pad_all: 4
+            widgets:
+              - label:
+                  align: CENTER
+                  width: 100%
+                  text: 'CENTER'
+                  text_align: CENTER
+        - obj:
+            align: TOP_RIGHT
+            x: -8
+            y: 28
+            width: 96
+            height: 32
+            bg_opa: TRANSP
+            border_width: 1
+            pad_all: 4
+            widgets:
+              - label:
+                  align: CENTER
+                  width: 100%
+                  text: 'RIGHT'
+                  text_align: RIGHT
+
+        # long_mode WRAP — soft-wrap on word boundaries
+        - obj:
+            align: TOP_MID
+            y: 70
+            width: 304
+            height: 76
+            bg_opa: TRANSP
+            border_width: 1
+            pad_all: 6
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 100%
+                  text: 'WRAP: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+                  long_mode: WRAP
+
+        # long_mode BREAK on the left, DOT on the right
+        - obj:
+            align: BOTTOM_LEFT
+            x: 8
+            y: -8
+            width: 148
+            height: 70
+            bg_opa: TRANSP
+            border_width: 1
+            pad_all: 6
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 100%
+                  text: 'BREAK:abcdefghijklmnopqrstuvwxyz0123456789'
+                  long_mode: BREAK
+
+        - obj:
+            align: BOTTOM_RIGHT
+            x: -8
+            y: -8
+            width: 148
+            height: 70
+            bg_opa: TRANSP
+            border_width: 1
+            pad_all: 6
+            widgets:
+              - label:
+                  align: TOP_LEFT
+                  width: 100%
+                  text: 'DOT: this single line is far too long to fit here'
+                  long_mode: DOT

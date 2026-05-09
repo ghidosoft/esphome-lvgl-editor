@@ -72,6 +72,7 @@ const SECTION_MAP: Record<string, SectionId> = {
   text_color: 'text',
   text_align: 'text',
   text_opa: 'text',
+  long_mode: 'text',
   // Layout container (parent-side; nested under widget.props.layout)
   'layout.type': 'layout',
   'layout.grid_rows': 'layout',

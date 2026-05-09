@@ -7,9 +7,9 @@ the tool gets used.
 
 - [ ] **Local image files**: support `file:` pointing at a disk path (serve via a `/__lvgl/asset/` endpoint sandboxed to `esphome/`).
 - [ ] **`grid_cell_*_align: CENTER/START/END`** non-STRETCH: only partially handled — verify against real usage.
-- [ ] **`pad_row`/`pad_column` on layout-less containers**: today only `pad_all` is honoured as inset; per-axis padding isn't.
-- [ ] **Explicit `text_align: LEFT/RIGHT/CENTER`** on labels (currently inferred from `align`).
-- [ ] **Multi-line label**: word-wrap when `long_mode: WRAP` / `BREAK`.
+- [x] ~~`pad_row`/`pad_column` on layout-less containers~~: closed as out-of-scope — LVGL upstream doesn't use these as inset either (they're style props consumed only by flex/grid layout engines as gap, plus widgets like `checkbox` that read them directly). Per-side `pad_top/right/bottom/left` and `pad_all` are already honoured as inset (see `applyPadding` in `src/renderer/boxes.ts`).
+- [x] **Explicit `text_align: LEFT/RIGHT/CENTER`** on labels — overrides the alignment inferred from `align:` (`AUTO` keeps inference). See `src/renderer/widgets/label.ts`.
+- [x] **Multi-line label**: `long_mode: WRAP` (word-wrap), `BREAK` (char-wrap), `DOT` (single-line ellipsis). `SCROLL`/`SCROLL_CIRCULAR` still out of scope.
 - [ ] **DPR scaling**: crisp canvas on retina displays (currently 1:1).
 - [ ] **Cosmetic save diffs from eemeli re-stringify**: even with `flowCollectionPadding:false` + `lineWidth:0`, a single edit can touch a handful of unrelated lines (hex case normalized `0xFF`→`0xff`, orphan comments re-indented between top-level blocks). Semantically identical, ESPHome-safe, but ugly in git diffs. Real fix would require CST-level patching instead of `doc.setIn` + `doc.toString()`.
 - [ ] **Error overlay**: when the parser hits `ProjectLoadError`, show file path + message in a banner instead of an empty canvas.

@@ -11,4 +11,11 @@ export const LABEL_SCHEMA: PropertySchema = [
     kind: 'enum',
     enum: ['LEFT', 'CENTER', 'RIGHT', 'AUTO'],
   },
+  {
+    key: 'long_mode',
+    kind: 'enum',
+    // CLIP is LVGL's default (single-line, no overflow handling).
+    // SCROLL/SCROLL_CIRCULAR omitted — they require animation.
+    enum: ['WRAP', 'BREAK', 'DOT', 'CLIP'],
+  },
 ];
