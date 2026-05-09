@@ -1,12 +1,22 @@
 /**
  * Reproduction of LVGL 9.5's `lv_theme_default` for the preview renderer.
  *
- * Sourced from upstream `release/v9.5/src/themes/default/lv_theme_default.c`
- * and `src/misc/lv_palette.c`. Light + dark, medium-display profile (no DPI
- * scaling — fixed numeric values that match a typical ESP32 240×320/320×480).
+ * Architecture: a structural skeleton (encoded inline in `composeTheme`)
+ * plus mode-specific palettes (`lightPalette`, `darkPalette`) that supply
+ * the colour tokens. Composing a palette into the skeleton produces a
+ * `DefaultTheme` ready for the renderer. To add a custom theme, define a
+ * new `Palette` and call `composeTheme(palette)`.
  *
- * Consumed by `resolveProp` / `resolvePartProp` in styles.ts as the third
- * resolution layer, after inline widget.props and widget.styles[].
+ * Sourced from upstream `release/v9.5/src/themes/default/lv_theme_default.c`
+ * and `src/misc/lv_palette.c`. Medium-display profile (no DPI scaling —
+ * fixed numeric values that match a typical ESP32 240×320/320×480).
+ *
+ * Consumed by `resolveProp` / `resolvePartProp` in styles.ts as the
+ * third+fourth resolution layer, after inline widget.props and
+ * widget.styles[]. `theme.obj.main` acts as the universal base —
+ * `resolveProp` falls through to it for any widget that doesn't override
+ * the key on its own `main` part (mirrors LVGL's "every widget extends
+ * lv_obj").
  */
 export type ThemePart = Record<string, unknown>;
 export type ThemeWidget = Record<string, ThemePart>; // keyed by part name ('main', 'indicator', 'knob', 'track')
@@ -21,7 +31,17 @@ export type DefaultTheme = Record<string, ThemeWidget>; // keyed by widget type
 export type StateOverrides = Partial<Record<'checked' | 'pressed' | 'disabled', ThemePart>>;
 export type ThemeStates = Record<string, StateOverrides>; // keyed by widget type
 
-const PALETTE = {
+// ─── Base structural defaults ────────────────────────────────────────────
+// Numeric constants applied uniformly across light/dark — they describe the
+// LVGL default theme's geometry, not its colour scheme.
+const RADIUS_CIRCLE = 9999;
+const PAD_DEF = 20;
+const PAD_SMALL = 12;
+
+// ─── Palettes ────────────────────────────────────────────────────────────
+// Raw colour swatches reused across palettes. Internal — palette consumers
+// should reference the semantic `Palette` tokens, not these.
+const RAW_COLORS = {
   greyMain: '#9e9e9e',
   greyLight2: '#e0e0e0',
   greyLight4: '#f5f5f5',
@@ -32,11 +52,15 @@ const PALETTE = {
   white: '#ffffff',
 } as const;
 
-const RADIUS_CIRCLE = 9999;
-const PAD_DEF = 20;
-const PAD_SMALL = 12;
+// Default secondary colour from LVGL's theme args (`LV_PALETTE_RED main`).
+const SECONDARY = '#f44336';
 
-interface Tokens {
+/**
+ * Semantic colour tokens consumed by `composeTheme`. A palette is the only
+ * thing that varies between light and dark mode; everything else (pads,
+ * radii, opacities, sizes) is encoded directly in the skeleton.
+ */
+export interface Palette {
   scr: string;
   card: string;
   grey: string;
@@ -46,53 +70,58 @@ interface Tokens {
   trackMuted: string;
 }
 
-// Default secondary colour from LVGL's theme args (`LV_PALETTE_RED main`).
-const SECONDARY = '#f44336';
-
-const LIGHT_TOKENS: Tokens = {
-  scr: PALETTE.greyLight4,
-  card: PALETTE.white,
-  grey: PALETTE.greyLight2,
-  text: PALETTE.greyDark4,
-  primary: PALETTE.blueMain,
+export const lightPalette: Palette = {
+  scr: RAW_COLORS.greyLight4,
+  card: RAW_COLORS.white,
+  grey: RAW_COLORS.greyLight2,
+  text: RAW_COLORS.greyDark4,
+  primary: RAW_COLORS.blueMain,
   secondary: SECONDARY,
-  trackMuted: PALETTE.blueLight4,
+  trackMuted: RAW_COLORS.blueLight4,
 };
 
-const DARK_TOKENS: Tokens = {
+export const darkPalette: Palette = {
   scr: '#15171a',
   card: '#282b30',
   grey: '#2f3237',
-  text: PALETTE.greyLight5,
-  primary: PALETTE.blueMain,
+  text: RAW_COLORS.greyLight5,
+  primary: RAW_COLORS.blueMain,
   secondary: SECONDARY,
   trackMuted: '#1a2a3a',
 };
 
-function buildTheme(t: Tokens): DefaultTheme {
+/**
+ * Build the full theme from a palette. The structural skeleton (pads, radii,
+ * opacities, sizes) is encoded inline; only colour values come from the
+ * palette argument. `obj.main` collects the universal defaults that the
+ * cascade in `resolveProp` falls back to for every widget — per-widget
+ * `main` parts list only the props that diverge from those.
+ */
+export function composeTheme(p: Palette): DefaultTheme {
   return {
     obj: {
-      // LVGL applies the "card" style to non-screen obj instances — white
-      // background in light mode, slightly lifted dark grey in dark mode.
-      // The actual screen background is painted directly by CanvasStage via
-      // `defaultScreenBg(darkMode)` and uses the `scr` token instead.
+      // Universal defaults — every widget inherits these via the obj.main
+      // fallback in resolveProp/resolvePartProp. LVGL's screen background
+      // is painted by CanvasStage via `defaultScreenBg(darkMode)` (uses
+      // `scr` token); non-screen obj instances draw the card style below.
       main: {
-        bg_color: t.card,
+        bg_color: p.card,
         bg_opa: 1,
-        text_color: t.text,
-        border_color: t.grey,
+        text_color: p.text,
+        text_opa: 1,
+        border_color: p.grey,
         border_opa: 0,
         border_width: 0,
         radius: 0,
+        pad_all: 0,
+        pad_row: 0,
+        pad_column: 0,
+        align: 'TOP_LEFT',
       },
     },
     button: {
       main: {
-        bg_color: t.grey,
-        bg_opa: 1,
-        text_color: t.text,
-        border_opa: 0,
-        border_width: 0,
+        bg_color: p.grey,
         radius: 12,
         pad_top: PAD_SMALL,
         pad_bottom: PAD_SMALL,
@@ -100,45 +129,32 @@ function buildTheme(t: Tokens): DefaultTheme {
         pad_right: PAD_DEF,
       },
     },
+    // label.main has no overrides — every default cascades from obj.main.
     label: {
-      main: {
-        text_color: t.text,
-        text_opa: 1,
-        align: 'TOP_LEFT',
-      },
+      main: {},
     },
     slider: {
       main: {
-        bg_color: t.trackMuted,
-        bg_opa: 1,
-        border_opa: 0,
+        bg_color: p.trackMuted,
         radius: RADIUS_CIRCLE,
       },
       indicator: {
-        bg_color: t.primary,
-        bg_opa: 1,
-        border_opa: 0,
+        bg_color: p.primary,
         radius: RADIUS_CIRCLE,
       },
       knob: {
-        bg_color: t.primary,
-        bg_opa: 1,
-        border_opa: 0,
+        bg_color: p.primary,
         radius: RADIUS_CIRCLE,
         pad_all: 6,
       },
     },
     bar: {
       main: {
-        bg_color: t.trackMuted,
-        bg_opa: 1,
-        border_opa: 0,
+        bg_color: p.trackMuted,
         radius: RADIUS_CIRCLE,
       },
       indicator: {
-        bg_color: t.primary,
-        bg_opa: 1,
-        border_opa: 0,
+        bg_color: p.primary,
         radius: RADIUS_CIRCLE,
       },
     },
@@ -149,18 +165,18 @@ function buildTheme(t: Tokens): DefaultTheme {
       main: {
         width: 'SIZE_CONTENT',
         height: 'SIZE_CONTENT',
-        text_color: t.text,
-        text_opa: 1,
         bg_opa: 0,
-        border_opa: 0,
         pad_column: 8,
       },
       indicator: {
         // No bg_color set: the renderer flips between card (off) and primary
         // (on) based on the checked state, mirroring how the default theme
-        // adds `bg_color_primary` only on `LV_STATE_CHECKED`.
+        // adds `bg_color_primary` only on `LV_STATE_CHECKED`. `bg_opa: 1`
+        // is explicit because checkbox.main sets `bg_opa: 0` (transparent
+        // checkbox surface) — without the override the indicator would
+        // inherit that and disappear.
         bg_opa: 1,
-        border_color: t.primary,
+        border_color: p.primary,
         border_width: 2,
         border_opa: 1,
         radius: 4,
@@ -174,21 +190,15 @@ function buildTheme(t: Tokens): DefaultTheme {
       main: {
         width: 50,
         height: 25,
-        bg_color: PALETTE.greyMain,
-        bg_opa: 1,
-        border_opa: 0,
+        bg_color: RAW_COLORS.greyMain,
         radius: RADIUS_CIRCLE,
       },
       indicator: {
-        bg_color: t.primary,
-        bg_opa: 1,
-        border_opa: 0,
+        bg_color: p.primary,
         radius: RADIUS_CIRCLE,
       },
       knob: {
-        bg_color: PALETTE.white,
-        bg_opa: 1,
-        border_opa: 0,
+        bg_color: RAW_COLORS.white,
         radius: RADIUS_CIRCLE,
         // Negative pad in LVGL's switch *shrinks* the knob (see lv_switch.c —
         // `knob_area.x1 -= knob_left` with a negative pad insets the bbox).
@@ -199,13 +209,13 @@ function buildTheme(t: Tokens): DefaultTheme {
     },
     spinner: {
       main: {
-        arc_color: t.grey,
+        arc_color: p.grey,
         arc_opa: 1,
         arc_width: 10,
         arc_rounded: true,
       },
       indicator: {
-        arc_color: t.primary,
+        arc_color: p.primary,
         arc_opa: 1,
         arc_width: 10,
         arc_rounded: true,
@@ -213,24 +223,20 @@ function buildTheme(t: Tokens): DefaultTheme {
     },
     arc: {
       main: {
-        arc_color: t.grey,
+        arc_color: p.grey,
         arc_opa: 1,
         arc_width: 10,
         arc_rounded: true,
       },
       indicator: {
-        arc_color: t.primary,
+        arc_color: p.primary,
         arc_opa: 1,
         arc_width: 10,
         arc_rounded: true,
       },
       knob: {
-        bg_color: t.primary,
-        bg_opa: 1,
-        border_opa: 0,
-        border_width: 0,
+        bg_color: p.primary,
         radius: RADIUS_CIRCLE,
-        pad_all: 0,
       },
     },
     meter: {
@@ -238,13 +244,9 @@ function buildTheme(t: Tokens): DefaultTheme {
       // card by default; cookbook examples opt out via `bg_opa: 0` when they
       // want a bare gauge.
       main: {
-        bg_color: t.card,
-        bg_opa: 1,
-        border_color: t.grey,
         border_opa: 1,
         border_width: 1,
         radius: RADIUS_CIRCLE,
-        text_color: t.text,
       },
       // INDICATOR part drives the central pivot dot under the needles
       // (`drawPivotDot` in widgets/meter.ts). LVGL's default theme sets
@@ -252,16 +254,15 @@ function buildTheme(t: Tokens): DefaultTheme {
       indicator: {
         width: 15,
         height: 15,
-        bg_color: t.text,
-        bg_opa: 1,
+        bg_color: p.text,
         radius: RADIUS_CIRCLE,
       },
     },
   };
 }
 
-export const LIGHT_THEME: DefaultTheme = buildTheme(LIGHT_TOKENS);
-export const DARK_THEME: DefaultTheme = buildTheme(DARK_TOKENS);
+export const LIGHT_THEME: DefaultTheme = composeTheme(lightPalette);
+export const DARK_THEME: DefaultTheme = composeTheme(darkPalette);
 
 /**
  * State-driven theme overrides. Replicates the per-state styles the LVGL
@@ -291,5 +292,5 @@ export function getThemeStates(): ThemeStates {
 
 /** Default screen background colour for the active mode (used by CanvasStage to clear the canvas). */
 export function defaultScreenBg(darkMode: boolean): string {
-  return darkMode ? DARK_TOKENS.scr : LIGHT_TOKENS.scr;
+  return darkMode ? darkPalette.scr : lightPalette.scr;
 }
