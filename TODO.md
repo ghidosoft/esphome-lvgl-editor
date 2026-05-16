@@ -20,7 +20,7 @@ the tool gets used.
 
 ## Medium-term (open features)
 
-- [ ] **`buttonmatrix` widget**: grid of buttons defined inline (used by page-nav footers, numeric keypads, theme example). Self-contained: a single widget node renders multiple cells.
+- [x] **`buttonmatrix` widget**: grid of buttons defined inline (used by page-nav footers, numeric keypads, theme example). Self-contained: a single widget node renders multiple cells. Implemented in `src/renderer/widgets/buttonmatrix.ts` with LVGL 9 layout math (equal-height rows, 1..15 proportional width units, `pad_row`/`pad_column` gaps) and state-aware cell styling via synthetic `items_checked`/`items_disabled` theme parts. Schema in `src/editor/schema/buttonmatrix.ts` exposes `one_checked`, paddings and the `Cells` (items) style group. Still out: click-to-toggle interaction, `popover` press visual, `#RRGGBB` recolor markup, `LV_BORDER_SIDE_INTERNAL`, per-cell inspector targeting.
 - [ ] **`spinbox` widget**: numeric input with up/down buttons (climate control, keypad).
 - [ ] **`dropdown` / `roller` widgets**: collapsible / scrollable option pickers.
 - [ ] **`top_layer` overlay slot**: separate render layer always drawn on top of the active page (used for boot screen, API status icon, persistent title bars). Needs a small additions to the page model so widgets in `lvgl.top_layer:` always paint last.

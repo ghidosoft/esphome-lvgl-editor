@@ -108,7 +108,9 @@ export function SaveBar({ project, projectName }: Props) {
             widgetCount > 0 ? `${widgetCount} widget${widgetCount === 1 ? '' : 's'}` : null,
             styleCount > 0 ? `${styleCount} style${styleCount === 1 ? '' : 's'}` : null,
             varCount > 0 ? `${varCount} variable${varCount === 1 ? '' : 's'}` : null,
-            projectCount > 0 ? `${projectCount} project setting${projectCount === 1 ? '' : 's'}` : null,
+            projectCount > 0
+              ? `${projectCount} project setting${projectCount === 1 ? '' : 's'}`
+              : null,
           ]
             .filter(Boolean)
             .join(' · ')}

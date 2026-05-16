@@ -325,11 +325,7 @@ function computeChildSlots(parent: LvglWidget, inner: Box, ctx: RenderContext): 
   }
   if (parent.layout?.kind === 'flex') {
     const childSizes = parent.children.map((child) => resolveChildSize(child, inner, ctx));
-    return layoutFlex(
-      parent.layout.spec,
-      { width: inner.width, height: inner.height },
-      childSizes,
-    );
+    return layoutFlex(parent.layout.spec, { width: inner.width, height: inner.height }, childSizes);
   }
   // Absolute layout: resolve each child's box against the unscrolled inner
   // and convert to local coords. This duplicates the work `computeBox` does

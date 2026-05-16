@@ -3,6 +3,7 @@ import { contentBox } from '../boxes';
 import { parseColor, parseOpacity, withAlpha } from '../colors';
 import type { Box, RenderContext } from '../context';
 import { resolveFont } from '../fonts';
+import { lvLineHeight, parseEmSize } from '../fontMetrics';
 import { resolvePartProp, resolveProp } from '../styles';
 import { roundedRectPath } from './obj';
 
@@ -38,10 +39,7 @@ export function renderCheckbox(w: LvglWidget, box: Box, ctx: RenderContext): Box
   const indPad = num(resolvePartProp(w, 'indicator', 'pad_all', styles, theme), 3);
   const indSide = lineHeight + indPad * 2;
   const indRadius = num(resolvePartProp(w, 'indicator', 'radius', styles, theme), 4);
-  const indBorderWidth = num(
-    resolvePartProp(w, 'indicator', 'border_width', styles, theme),
-    2,
-  );
+  const indBorderWidth = num(resolvePartProp(w, 'indicator', 'border_width', styles, theme), 2);
 
   const cardBg = checked ? primaryColor(theme) : cardColor(theme);
   const indBgRaw = resolvePartProp(w, 'indicator', 'bg_color', styles, theme);
@@ -72,8 +70,7 @@ export function renderCheckbox(w: LvglWidget, box: Box, ctx: RenderContext): Box
     c.fill();
   }
   if (indBorderOpa > 0 && indBorderWidth > 0) {
-    c.strokeStyle =
-      indBorderOpa < 1 ? withAlpha(indBorderColor, indBorderOpa) : indBorderColor;
+    c.strokeStyle = indBorderOpa < 1 ? withAlpha(indBorderColor, indBorderOpa) : indBorderColor;
     c.lineWidth = indBorderWidth;
     roundedRectPath(
       c,
@@ -174,25 +171,12 @@ function cardColor(theme: { obj?: { main?: Record<string, unknown> } }): string 
   return typeof v === 'string' ? v : '#ffffff';
 }
 
-function primaryColor(theme: {
-  slider?: { indicator?: Record<string, unknown> };
-}): string {
+function primaryColor(theme: { slider?: { indicator?: Record<string, unknown> } }): string {
   // The theme doesn't expose the raw `primary` token; pull it back out of a
   // place where it lands as-is. Slider.indicator.bg_color is set to
   // `t.primary` and never overridden by the renderer, so it's a safe proxy.
   const v = theme.slider?.indicator?.bg_color;
   return typeof v === 'string' ? v : '#2196f3';
-}
-
-function parseEmSize(font: string): number {
-  const m = /(\d+)px/.exec(font);
-  return m ? parseInt(m[1], 10) : 14;
-}
-
-// LVGL line-height (Montserrat: em * 8/7 → 14→16, 18→21). Web fontBoundingBox
-// runs ~em*1.3 and pushes flex containers into spurious overflow.
-function lvLineHeight(font: string): number {
-  return Math.round((parseEmSize(font) * 8) / 7);
 }
 
 function num(v: unknown, fallback: number): number {

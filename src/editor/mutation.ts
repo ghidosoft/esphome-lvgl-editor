@@ -223,10 +223,7 @@ export function buildEditOps(
  * parent maps, so writing `lvgl.theme.dark_mode` works even when `theme:` is
  * absent.
  */
-export function buildProjectEditOps(
-  project: EsphomeProject,
-  ov: ProjectOverrides,
-): EditOp[] {
+export function buildProjectEditOps(project: EsphomeProject, ov: ProjectOverrides): EditOp[] {
   const file = project.sourcePath;
   if (!file) return [];
   const ops: EditOp[] = [];

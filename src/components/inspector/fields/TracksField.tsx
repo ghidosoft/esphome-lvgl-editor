@@ -82,12 +82,7 @@ export function TracksField({ value, onChange, disabled }: Props) {
           </button>
         </div>
       ))}
-      <button
-        type="button"
-        className="tracks-field__add"
-        disabled={disabled}
-        onClick={append}
-      >
+      <button type="button" className="tracks-field__add" disabled={disabled} onClick={append}>
         + Add track
       </button>
     </div>

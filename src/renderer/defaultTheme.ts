@@ -207,6 +207,35 @@ export function composeTheme(p: Palette): DefaultTheme {
         pad_all: -4,
       },
     },
+    buttonmatrix: {
+      // LVGL 9 default: card-coloured container + button-styled cells. The
+      // `items_checked` / `items_disabled` parts aren't real LVGL parts — the
+      // buttonmatrix renderer reads them as synthetic state-overrides for the
+      // `items` part (see src/renderer/widgets/buttonmatrix.ts).
+      main: {
+        bg_color: p.card,
+        border_opa: 0,
+        radius: 8,
+        pad_all: 5,
+        pad_row: 4,
+        pad_column: 4,
+      },
+      items: {
+        bg_color: p.grey,
+        text_color: p.text,
+        radius: 4,
+        border_width: 0,
+      },
+      items_checked: {
+        bg_color: p.primary,
+        text_color: p.card,
+      },
+      items_disabled: {
+        bg_color: p.grey,
+        text_color: p.text,
+        bg_opa: 0.5,
+      },
+    },
     spinner: {
       main: {
         arc_color: p.grey,

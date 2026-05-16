@@ -55,18 +55,13 @@ export function renderArc(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   // start_angle/end_angle (aliases), or rotation+angle_range (shorthand).
   const rotation = num(resolveProp(w, 'rotation', styles, theme), 0);
   const startRaw =
-    resolveProp(w, 'bg_start_angle', styles, theme) ??
-    resolveProp(w, 'start_angle', styles, theme);
+    resolveProp(w, 'bg_start_angle', styles, theme) ?? resolveProp(w, 'start_angle', styles, theme);
   const endRaw =
     resolveProp(w, 'bg_end_angle', styles, theme) ?? resolveProp(w, 'end_angle', styles, theme);
   const rangeRaw = resolveProp(w, 'angle_range', styles, theme);
   const trackStartDeg = num(startRaw, 135);
   const trackEndDeg =
-    endRaw != null
-      ? num(endRaw, 45)
-      : rangeRaw != null
-        ? trackStartDeg + num(rangeRaw, 270)
-        : 45;
+    endRaw != null ? num(endRaw, 45) : rangeRaw != null ? trackStartDeg + num(rangeRaw, 270) : 45;
   // Normalise so end > start when expressed as a sweep (LVGL stores absolute
   // 0..360 and lets end < start mean "wraps past 0"). For drawing, we add 360
   // to the smaller end so the indicator sweep math stays monotonic.
@@ -133,14 +128,8 @@ export function renderArc(w: LvglWidget, box: Box, ctx: RenderContext): Box {
       resolvePartProp(w, 'knob', 'border_color', styles, theme),
       '#000000',
     );
-    const knobBorderWidth = num(
-      resolvePartProp(w, 'knob', 'border_width', styles, theme),
-      0,
-    );
-    const knobBorderOpa = parseOpacity(
-      resolvePartProp(w, 'knob', 'border_opa', styles, theme),
-      0,
-    );
+    const knobBorderWidth = num(resolvePartProp(w, 'knob', 'border_width', styles, theme), 0);
+    const knobBorderOpa = parseOpacity(resolvePartProp(w, 'knob', 'border_opa', styles, theme), 0);
     const kx = cx + r * Math.cos(indEndRad);
     const ky = cy + r * Math.sin(indEndRad);
     if (knobOpa > 0 && knobRadius > 0) {

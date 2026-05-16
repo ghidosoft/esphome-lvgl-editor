@@ -181,11 +181,7 @@ function wrapLinesChar(text: string, maxWidth: number, c: CanvasRenderingContext
   return out;
 }
 
-function truncateWithEllipsis(
-  text: string,
-  maxWidth: number,
-  c: CanvasRenderingContext2D,
-): string {
+function truncateWithEllipsis(text: string, maxWidth: number, c: CanvasRenderingContext2D): string {
   if (c.measureText(text).width <= maxWidth) return text;
   const ellipsis = '…';
   // Binary search the largest prefix that still fits with the ellipsis.

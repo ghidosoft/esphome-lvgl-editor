@@ -66,7 +66,11 @@ export function EditorPanel({ project }: Props) {
       </div>
       <div className="editor-panel__content">
         {activeTab === 'properties' &&
-          (selectedWidgetId ? <PropertyPanel project={project} /> : <ProjectPanel project={project} />)}
+          (selectedWidgetId ? (
+            <PropertyPanel project={project} />
+          ) : (
+            <ProjectPanel project={project} />
+          ))}
         {activeTab === 'styles' && <StylesPanel project={project} />}
         {activeTab === 'variables' && <VariablesPanel project={project} />}
         {activeTab === 'project' && <ProjectPanel project={project} />}

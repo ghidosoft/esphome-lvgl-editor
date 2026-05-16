@@ -31,8 +31,7 @@ export function renderBar(w: LvglWidget, box: Box, ctx: RenderContext): Box {
     resolveProp(w, 'orientation', styles, theme) ?? 'AUTO',
   ).toUpperCase();
   const vertical =
-    orientationRaw === 'VERTICAL' ||
-    (orientationRaw === 'AUTO' && box.height > box.width);
+    orientationRaw === 'VERTICAL' || (orientationRaw === 'AUTO' && box.height > box.width);
 
   const trackRadius = num(
     resolveProp(w, 'radius', styles, theme),

@@ -151,8 +151,10 @@ function findScrollTarget(
     if (dx === 0 && dy === 0) continue;
     const maxX = Math.max(0, h.scroll.contentWidth - h.scroll.inner.width);
     const maxY = Math.max(0, h.scroll.contentHeight - h.scroll.inner.height);
-    const canAbsorbX = dx !== 0 && ((dx < 0 && h.scroll.scrollX > 0) || (dx > 0 && h.scroll.scrollX < maxX));
-    const canAbsorbY = dy !== 0 && ((dy < 0 && h.scroll.scrollY > 0) || (dy > 0 && h.scroll.scrollY < maxY));
+    const canAbsorbX =
+      dx !== 0 && ((dx < 0 && h.scroll.scrollX > 0) || (dx > 0 && h.scroll.scrollX < maxX));
+    const canAbsorbY =
+      dy !== 0 && ((dy < 0 && h.scroll.scrollY > 0) || (dy > 0 && h.scroll.scrollY < maxY));
     if (!canAbsorbX && !canAbsorbY) continue;
     return { entry: h, dx, dy };
   }

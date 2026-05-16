@@ -413,8 +413,7 @@ function InlineCell({
 }) {
   const cellLabel = entry.label ?? state.displayLabel;
   const isVarBacked = !!state.varBinding;
-  const canDelete =
-    state.existsInSource && !isVarBacked && !state.template && !state.pendingDelete;
+  const canDelete = state.existsInSource && !isVarBacked && !state.template && !state.pendingDelete;
   return (
     <div
       className={
@@ -426,11 +425,7 @@ function InlineCell({
     >
       <span
         className="inline-cell__label"
-        title={
-          state.pendingDelete
-            ? `${state.displayLabel} — pending removal`
-            : state.displayLabel
-        }
+        title={state.pendingDelete ? `${state.displayLabel} — pending removal` : state.displayLabel}
       >
         {cellLabel}
       </span>

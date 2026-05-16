@@ -1,5 +1,6 @@
 import { ARC_SCHEMA } from './arc';
 import { BAR_SCHEMA } from './bar';
+import { BUTTONMATRIX_SCHEMA } from './buttonmatrix';
 import { CHECKBOX_SCHEMA } from './checkbox';
 import { COMMON_SCHEMA } from './common';
 import { LABEL_SCHEMA } from './label';
@@ -100,6 +101,7 @@ export function getSchema(widgetType: string): PropertySchema {
 const SPECIFIC_SCHEMAS: Record<string, PropertySchema> = {
   arc: ARC_SCHEMA,
   bar: BAR_SCHEMA,
+  buttonmatrix: BUTTONMATRIX_SCHEMA,
   checkbox: CHECKBOX_SCHEMA,
   label: LABEL_SCHEMA,
   slider: SLIDER_SCHEMA,

@@ -79,10 +79,7 @@ export function renderSwitch(w: LvglWidget, box: Box, ctx: RenderContext): Box {
   const knob: PartStyle = {
     fill: parseColor(resolvePartProp(w, 'knob', 'bg_color', styles, theme), '#ffffff'),
     fillOpa: parseOpacity(resolvePartProp(w, 'knob', 'bg_opa', styles, theme), 1),
-    borderColor: parseColor(
-      resolvePartProp(w, 'knob', 'border_color', styles, theme),
-      '#000000',
-    ),
+    borderColor: parseColor(resolvePartProp(w, 'knob', 'border_color', styles, theme), '#000000'),
     borderWidth: num(resolvePartProp(w, 'knob', 'border_width', styles, theme), 0),
     borderOpa: parseOpacity(resolvePartProp(w, 'knob', 'border_opa', styles, theme), 0),
     radius: knobRadius,

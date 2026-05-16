@@ -318,7 +318,13 @@ export function applyOverrides(
     projectOverrides.darkMode !== undefined
       ? { darkMode: projectOverrides.darkMode }
       : project.theme;
-  return { ...project, pages: nextPages, styles: nextStyles, display: nextDisplay, theme: nextTheme };
+  return {
+    ...project,
+    pages: nextPages,
+    styles: nextStyles,
+    display: nextDisplay,
+    theme: nextTheme,
+  };
 }
 
 function applyStylePatches(
