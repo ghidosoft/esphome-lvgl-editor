@@ -10,6 +10,7 @@ import { renderLabel } from './label';
 import { renderImage } from './image';
 import { renderMeter } from './meter';
 import { renderSlider } from './slider';
+import { renderSpinbox } from './spinbox';
 import { renderSpinner } from './spinner';
 import { renderSwitch } from './switch';
 import { renderPlaceholder } from './placeholder';
@@ -32,6 +33,7 @@ export const WIDGET_RENDERERS: Record<string, RenderFn> = {
   checkbox: renderCheckbox,
   meter: renderMeter,
   slider: renderSlider,
+  spinbox: renderSpinbox,
   spinner: renderSpinner,
   switch: renderSwitch,
 };

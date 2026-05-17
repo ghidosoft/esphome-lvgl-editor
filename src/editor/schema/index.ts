@@ -6,6 +6,7 @@ import { COMMON_SCHEMA } from './common';
 import { LABEL_SCHEMA } from './label';
 import { LAYOUT_SCHEMA } from './layout';
 import { SLIDER_SCHEMA } from './slider';
+import { SPINBOX_SCHEMA } from './spinbox';
 import { SPINNER_SCHEMA } from './spinner';
 import { SWITCH_SCHEMA } from './switch';
 
@@ -105,6 +106,7 @@ const SPECIFIC_SCHEMAS: Record<string, PropertySchema> = {
   checkbox: CHECKBOX_SCHEMA,
   label: LABEL_SCHEMA,
   slider: SLIDER_SCHEMA,
+  spinbox: SPINBOX_SCHEMA,
   spinner: SPINNER_SCHEMA,
   switch: SWITCH_SCHEMA,
 };

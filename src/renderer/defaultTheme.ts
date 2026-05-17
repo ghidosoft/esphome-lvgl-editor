@@ -287,6 +287,22 @@ export function composeTheme(p: Palette): DefaultTheme {
         radius: RADIUS_CIRCLE,
       },
     },
+    spinbox: {
+      // LVGL 9 spinbox extends textarea; the default textarea style is a card
+      // with a thin grey border and small padding. Cursor (LV_PART_CURSOR) is
+      // focus-gated and not rendered in the static preview.
+      main: {
+        bg_color: p.card,
+        border_color: p.grey,
+        border_width: 1,
+        border_opa: 1,
+        radius: 4,
+        pad_top: PAD_SMALL,
+        pad_bottom: PAD_SMALL,
+        pad_left: PAD_SMALL,
+        pad_right: PAD_SMALL,
+      },
+    },
   };
 }
 
